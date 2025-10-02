@@ -8,18 +8,44 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://127.0.0.1:3000', 
-    'http://localhost:3001',
-    'https://your-portfolio-domain.vercel.app', // Replace with your actual Vercel domain
-    /\.vercel\.app$/ // Allow all Vercel preview deployments
-  ],
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000', 
+      'http://127.0.0.1:3000', 
+      'http://localhost:3001',
+      /\.vercel\.app$/, // Allow all Vercel deployments
+      /\.netlify\.app$/, // Allow Netlify deployments
+      /^https?:\/\/localhost(:\d+)?$/, // Allow any localhost port
+    ];
+    
+    // Check if origin matches any allowed pattern
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      } else if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -555,8 +581,14 @@ app.post("/contact", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📧 Contact endpoint: http://localhost:${PORT}/contact`);
-  console.log(`📮 Bulk mail endpoint: http://localhost:${PORT}/sendmail`);
-});
+// Only start the server if not in serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📧 Contact endpoint: http://localhost:${PORT}/contact`);
+    console.log(`📮 Bulk mail endpoint: http://localhost:${PORT}/sendmail`);
+  });
+}
+
+// Export the app for serverless deployment
+module.exports = app;

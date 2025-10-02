@@ -1,14 +1,13 @@
 [build]
   base = "frontend"
-  command = "npm run build"
+  command = "npm install && REACT_APP_ENVIRONMENT=production npm run build"
   publish = "build"
 
 [build.environment]
   NODE_VERSION = "18"
+  REACT_APP_ENVIRONMENT = "production"
 
-[[functions]]
-  directory = "backend"
-  node_bundler = "esbuild"
-
-[functions."backend/index"]
-  external_node_modules = ["express", "cors", "dotenv", "mongodb", "mongoose", "nodemailer"]
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

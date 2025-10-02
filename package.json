@@ -1,0 +1,32 @@
+{
+  "name": "prakash-leena-portfolio",
+  "version": "1.0.0",
+  "description": "Full-stack portfolio website with React frontend and Node.js backend",
+  "main": "backend/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "vercel-build": "cd frontend && npm install && npm run build"
+  },
+  "keywords": [
+    "portfolio",
+    "react",
+    "nodejs",
+    "express",
+    "mongodb",
+    "full-stack"
+  ],
+  "author": "Prakash Leena",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
