@@ -9,5 +9,8 @@
     "backend/index.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "installCommand": "npm install --prefix frontend",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/build"
 }
