@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { createApiUrl } from '../config/api';
+import React, { useState, useEffect } from 'react';
+import { createApiUrl, testApiConnection, apiRequest } from '../config/api';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +9,17 @@ const Contact = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [apiStatus, setApiStatus] = useState('checking'); // checking, connected, disconnected
+
+  // Test API connection on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      const result = await testApiConnection();
+      setApiStatus(result.success ? 'connected' : 'disconnected');
+    };
+    
+    checkConnection();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -25,21 +36,15 @@ const Contact = () => {
     try {
       console.log('📧 Submitting contact form...', { name: formData.name, message: formData.message.substring(0, 50) + '...' });
       
-      const response = await fetch(createApiUrl('contact'), {
+      const result = await apiRequest('contact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           name: formData.name,
           message: formData.message
         }),
       });
 
-      const result = await response.json();
-      console.log('📊 Contact form response:', result);
-
-      if (response.ok && result.success) {
+      if (result.success) {
         console.log('✅ Contact form submitted successfully');
         setSubmitStatus('success');
         setFormData({ name: '', email: '', message: '' });
@@ -47,7 +52,7 @@ const Contact = () => {
         // Clear success message after 5 seconds
         setTimeout(() => setSubmitStatus(null), 5000);
       } else {
-        console.error('❌ Contact form submission failed:', result.message);
+        console.error('❌ Contact form submission failed:', result.error);
         setSubmitStatus('error');
         
         // Clear error message after 5 seconds
@@ -78,6 +83,22 @@ const Contact = () => {
               Phasellus convallis elit id ullamcorper pulvinar. Duis aliquam turpis mauris, eu ultricies erat malesuada quis. 
               Aliquam dapibus, lacus eget hendrerit bibendum, urna est aliquam sem, sit amet imperdiet est velit quis lorem.
             </p>
+            
+            {/* API Status Indicator */}
+            <div className="mt-4 flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                apiStatus === 'connected' ? 'bg-green-500' : 
+                apiStatus === 'disconnected' ? 'bg-red-500' : 
+                'bg-yellow-500 animate-pulse'
+              }`}></div>
+              <span className="text-sm text-gray-400">
+                Backend: {
+                  apiStatus === 'connected' ? 'Connected' : 
+                  apiStatus === 'disconnected' ? 'Disconnected' : 
+                  'Checking...'
+                }
+              </span>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-12">
