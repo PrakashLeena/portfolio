@@ -1,7 +1,4 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
-  "outputDirectory": "frontend/build",
   "version": 2,
   "builds": [
     {
@@ -24,12 +21,6 @@
     {
       "src": "/(.*)",
       "dest": "/frontend/build/$1"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/backend/index.js"
     }
   ]
 }
