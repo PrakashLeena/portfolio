@@ -1,0 +1,14 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[functions]]
+  directory = "backend"
+  node_bundler = "esbuild"
+
+[functions."backend/index"]
+  external_node_modules = ["express", "cors", "dotenv", "mongodb", "mongoose", "nodemailer"]
