@@ -5,12 +5,8 @@
       "destination": "/backend/index.js"
     }
   ],
-  "functions": {
-    "backend/index.js": {
-      "maxDuration": 30
-    }
-  },
-  "installCommand": "npm install --prefix frontend",
+  
+  "installCommand": "npm install --prefix frontend && npm install --prefix backend",
   "buildCommand": "npm run build --prefix frontend",
   "outputDirectory": "frontend/build"
 }
