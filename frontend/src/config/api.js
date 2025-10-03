@@ -6,7 +6,7 @@ const API_CONFIG = {
   production: {
     // For Railway backend deployment, use the Railway URL
     // You can override this with REACT_APP_API_URL environment variable
-    baseURL: process.env.REACT_APP_API_URL || 'https://your-railway-app.railway.app',
+    baseURL: process.env.REACT_APP_API_URL || 'https://portfolio-backend-production-b85d.up.railway.app',
   }
 };
 
