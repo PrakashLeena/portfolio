@@ -10,8 +10,13 @@ const app = express();
 // Middleware
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log('🌐 CORS Request from origin:', origin);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('✅ CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
     
     const allowedOrigins = [
       'http://localhost:3000', 
@@ -22,6 +27,9 @@ const corsOptions = {
       /\.railway\.app$/, // Allow Railway deployments
       /\.up\.railway\.app$/, // Allow Railway custom domains
       /^https?:\/\/localhost(:\d+)?$/, // Allow any localhost port
+      // Add specific domains if needed
+      'https://portfolio-git-main-prakashleenas-projects.vercel.app',
+      'https://newportfolio-prakashleenas-projects.vercel.app',
     ];
     
     // Check if origin matches any allowed pattern
@@ -35,9 +43,11 @@ const corsOptions = {
     });
     
     if (isAllowed) {
+      console.log('✅ CORS: Allowing origin:', origin);
       callback(null, true);
     } else {
-      console.log('CORS blocked origin:', origin);
+      console.log('❌ CORS blocked origin:', origin);
+      console.log('📋 Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
