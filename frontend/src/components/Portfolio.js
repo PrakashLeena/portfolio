@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest } from '../config/api';
 
 // Contact Form State Hook
 const useContactForm = () => {
@@ -25,18 +26,13 @@ const useContactForm = () => {
     console.log('🚀 Submitting contact form:', formData);
 
     try {
-      console.log('📡 Sending request to backend...');
-      const response = await fetch('http://localhost:5000/contact', {
+      console.log('📡 Sending request to backend via API config...');
+      const result = await apiRequest('contact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 
-      console.log('📨 Response status:', response.status);
-      const result = await response.json();
-      console.log('📋 Response data:', result);
+      console.log('📋 API Response:', result);
 
       if (result.success) {
         setSubmitStatus('success');
@@ -44,7 +40,7 @@ const useContactForm = () => {
         console.log('✅ Form submitted successfully!');
       } else {
         setSubmitStatus('error');
-        console.log('❌ Form submission failed:', result.message);
+        console.log('❌ Form submission failed:', result.error);
       }
       
       setTimeout(() => setSubmitStatus(null), 5000);
