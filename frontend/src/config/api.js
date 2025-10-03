@@ -4,8 +4,8 @@ const API_CONFIG = {
     baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
   },
   production: {
-    // For Railway backend deployment, use the Railway URL
-    // You can override this with REACT_APP_API_URL environment variable
+    // Railway backend deployment URL
+    // This should be set as REACT_APP_API_URL environment variable in Vercel
     baseURL: process.env.REACT_APP_API_URL || 'https://portfolio-backend-production-b85d.up.railway.app',
   }
 };
@@ -50,27 +50,40 @@ export const createApiUrl = (endpoint) => {
   return `${API_BASE_URL}/${cleanEndpoint}`;
 };
 
-// API connection test function
+// API connection test function with better error handling
 export const testApiConnection = async () => {
   try {
     console.log('🔄 Testing API connection to:', API_BASE_URL);
+    
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(createApiUrl('health'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (response.ok) {
       const data = await response.json();
       console.log('✅ API connection successful:', data);
       return { success: true, data };
     } else {
-      console.error('❌ API connection failed:', response.status);
-      return { success: false, error: `HTTP ${response.status}` };
+      console.error('❌ API connection failed:', response.status, response.statusText);
+      return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
     }
   } catch (error) {
     console.error('❌ API connection error:', error);
+    
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'Connection timeout - Railway backend may be down' };
+    }
+    
     return { success: false, error: error.message };
   }
 };
