@@ -9,7 +9,7 @@
       }
     },
     {
-      "src": "backend/index.js",
+      "src": "backend/backend/index.js",
       "use": "@vercel/node",
       "config": {
         "maxDuration": 30
@@ -17,10 +17,12 @@
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/backend/index.js" },
+    { "src": "/api/(.*)", "dest": "/backend/backend/index.js" },
     { "src": "/(.*)", "dest": "/frontend/build/$1" }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "REACT_APP_API_URL": "/api",
+    "REACT_APP_ENVIRONMENT": "production"
   }
 }

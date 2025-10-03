@@ -11,7 +11,12 @@ const API_CONFIG = {
 
 // Determine environment - better detection for Vercel
 const isVercelProduction = process.env.VERCEL === '1' || 
-  (typeof window !== 'undefined' && window.location.hostname.includes('.vercel.app'));
+  process.env.VERCEL_ENV === 'production' ||
+  (typeof window !== 'undefined' && (
+    window.location.hostname.includes('.vercel.app') ||
+    window.location.hostname.includes('vercel.app')
+  ));
+
 const environment = process.env.REACT_APP_ENVIRONMENT || 
                    (process.env.NODE_ENV === 'production' || isVercelProduction ? 'production' : 'development');
 
@@ -21,7 +26,10 @@ console.log('🔧 API Config:', {
   NODE_ENV: process.env.NODE_ENV,
   REACT_APP_ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT,
   REACT_APP_API_URL: process.env.REACT_APP_API_URL,
-  hostname: typeof window !== 'undefined' ? window.location.hostname : 'server'
+  VERCEL: process.env.VERCEL,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+  hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+  baseURL: API_CONFIG[environment]?.baseURL
 });
 
 const config = API_CONFIG[environment];
