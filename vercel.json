@@ -7,14 +7,25 @@
       "config": { 
         "distDir": "build"
       }
+    },
+    {
+      "src": "backend/backend/index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/frontend/build/$1" }
+    { 
+      "src": "/api/(.*)", 
+      "dest": "/backend/backend/index.js" 
+    },
+    { 
+      "src": "/(.*)", 
+      "dest": "/frontend/build/$1" 
+    }
   ],
   "env": {
     "NODE_ENV": "production",
-    "REACT_APP_API_URL": "https://portfolio-backend-production-b85d.up.railway.app",
+    "REACT_APP_API_URL": "/api",
     "REACT_APP_ENVIRONMENT": "production"
   }
 }

@@ -4,6 +4,7 @@
   "description": "Backend for portfolio contact form and bulk mail",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'Build completed - no build step required for Node.js'",
     "start": "node index.js",
     "dev": "nodemon index.js",
     "check-ip": "node scripts/check-ip.js",
