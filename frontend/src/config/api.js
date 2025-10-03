@@ -4,8 +4,7 @@ const API_CONFIG = {
     baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
   },
   production: {
-    // Railway backend deployment URL
-    // This should be set as REACT_APP_API_URL environment variable in Vercel
+    // Railway backend deployment URL - always use the Railway URL for production
     baseURL: process.env.REACT_APP_API_URL || 'https://portfolio-backend-production-b85d.up.railway.app',
   }
 };
@@ -41,12 +40,7 @@ export const createApiUrl = (endpoint) => {
   // Remove leading slash if present to avoid double slashes
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   
-  // For production (Vercel), the baseURL is '/api', so we need to construct properly
-  if (API_BASE_URL === '/api') {
-    return `/api/${cleanEndpoint}`;
-  }
-  
-  // For development, use full URL
+  // Always use full Railway URL for production (no local API routes)
   return `${API_BASE_URL}/${cleanEndpoint}`;
 };
 

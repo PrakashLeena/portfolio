@@ -27,13 +27,9 @@ const corsOptions = {
       /\.railway\.app$/, // Allow Railway deployments
       /\.up\.railway\.app$/, // Allow Railway custom domains
       /^https?:\/\/localhost(:\d+)?$/, // Allow any localhost port
-      // Add specific Vercel domains
+      // Add specific domains if needed
       'https://portfolio-git-main-prakashleenas-projects.vercel.app',
       'https://newportfolio-prakashleenas-projects.vercel.app',
-      'https://newportfolio-git-main-prakashleenas-projects.vercel.app',
-      'https://newportfolio-prakashleenas-projects.vercel.app',
-      // Allow any subdomain of prakashleenas-projects.vercel.app
-      /https:\/\/.*-prakashleenas-projects\.vercel\.app$/,
     ];
     
     // Check if origin matches any allowed pattern
