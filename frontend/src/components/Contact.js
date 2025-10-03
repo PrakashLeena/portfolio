@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createApiUrl, testApiConnection, apiRequest } from '../config/api';
+import ConnectionDebugger from './ConnectionDebugger';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -71,6 +72,9 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen relative text-white">
+      {/* Debug Component - Remove after testing */}
+      <ConnectionDebugger />
+      
       {/* Contact Section */}
       <section id="contact" className="py-20 px-4">
         <div className="container mx-auto max-w-7xl">
