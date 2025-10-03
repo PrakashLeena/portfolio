@@ -40,8 +40,11 @@ export const createApiUrl = (endpoint) => {
   // Remove leading slash if present to avoid double slashes
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   
+  // Remove trailing slash from base URL if present
+  const cleanBaseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  
   // Always use full Railway URL for production (no local API routes)
-  return `${API_BASE_URL}/${cleanEndpoint}`;
+  return `${cleanBaseUrl}/${cleanEndpoint}`;
 };
 
 // API connection test function with better error handling
