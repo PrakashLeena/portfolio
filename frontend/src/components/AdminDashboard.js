@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest } from '../config/api';
 
 const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -63,15 +64,11 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/admin/login', {
+      console.log('🔐 Attempting admin login...');
+      const result = await apiRequest('admin/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, password }),
       });
-
-      const result = await response.json();
       
       if (result.success) {
         setIsAdmin(true);
@@ -113,15 +110,14 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/projects', {
+      console.log('💼 Adding new project:', newProject.title);
+      const result = await apiRequest('projects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(newProject),
       });
 
-      if (response.ok) {
+      if (result.success) {
+        console.log('✅ Project added successfully');
         alert('Project added successfully!');
         setNewProject({
           title: '',
@@ -132,7 +128,8 @@ const AdminDashboard = () => {
           image: ''
         });
       } else {
-        alert('Failed to add project');
+        console.error('❌ Failed to add project:', result.error);
+        alert('Failed to add project: ' + result.error);
       }
     } catch (error) {
       console.error('Error saving project:', error);
@@ -147,15 +144,14 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/experiences', {
+      console.log('👨‍💻 Adding new experience:', newExperience.title, 'at', newExperience.company);
+      const result = await apiRequest('experiences', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(newExperience),
       });
 
-      if (response.ok) {
+      if (result.success) {
+        console.log('✅ Work experience added successfully');
         alert('Work experience added successfully!');
         setNewExperience({
           title: '',
@@ -165,7 +161,8 @@ const AdminDashboard = () => {
           skills: ''
         });
       } else {
-        alert('Failed to add work experience');
+        console.error('❌ Failed to add experience:', result.error);
+        alert('Failed to add work experience: ' + result.error);
       }
     } catch (error) {
       console.error('Error saving experience:', error);
@@ -180,22 +177,22 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/skills', {
+      console.log('⚡ Adding new skill category:', newSkill.category);
+      const result = await apiRequest('skills', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(newSkill),
       });
 
-      if (response.ok) {
+      if (result.success) {
+        console.log('✅ Technical skill added successfully');
         alert('Technical skill added successfully!');
         setNewSkill({
           category: '',
           skills: ''
         });
       } else {
-        alert('Failed to add technical skill');
+        console.error('❌ Failed to add skill:', result.error);
+        alert('Failed to add technical skill: ' + result.error);
       }
     } catch (error) {
       console.error('Error saving skill:', error);
@@ -210,15 +207,14 @@ const AdminDashboard = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/certifications', {
+      console.log('🏆 Adding new certification:', newCertification.title, 'from', newCertification.issuer);
+      const result = await apiRequest('certifications', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(newCertification),
       });
 
-      if (response.ok) {
+      if (result.success) {
+        console.log('✅ Certification added successfully');
         alert('Certification added successfully!');
         setNewCertification({
           title: '',
@@ -228,7 +224,8 @@ const AdminDashboard = () => {
           description: ''
         });
       } else {
-        alert('Failed to add certification');
+        console.error('❌ Failed to add certification:', result.error);
+        alert('Failed to add certification: ' + result.error);
       }
     } catch (error) {
       console.error('Error saving certification:', error);

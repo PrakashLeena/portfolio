@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiRequest } from '../config/api';
 
 const Blog = () => {
   const [blogs, setBlogs] = useState([]);
@@ -50,12 +51,12 @@ const Blog = () => {
 
   const fetchBlogs = async () => {
     try {
-      const response = await fetch('http://localhost:5000/blogs');
-      const data = await response.json();
+      console.log('📚 Fetching blogs from API...');
+      const result = await apiRequest('blogs');
       
-      if (data.success && data.blogs.length > 0) {
+      if (result.success && result.data.blogs && result.data.blogs.length > 0) {
         // Format dates for display
-        const formattedBlogs = data.blogs.map(blog => ({
+        const formattedBlogs = result.data.blogs.map(blog => ({
           ...blog,
           date: new Date(blog.createdAt).toLocaleDateString('en-US', { 
             year: 'numeric', 
@@ -63,14 +64,17 @@ const Blog = () => {
             day: 'numeric' 
           })
         }));
+        console.log(`✅ Loaded ${formattedBlogs.length} blogs from API`);
         setBlogs(formattedBlogs);
       } else {
         // Use sample data if no blogs in database
+        console.log('📝 No blogs found in API, using sample data');
         setBlogs(sampleBlogs);
       }
     } catch (error) {
-      console.error('Error fetching blogs:', error);
+      console.error('❌ Error fetching blogs:', error);
       // Fallback to sample data
+      console.log('📝 Using sample data as fallback');
       setBlogs(sampleBlogs);
     }
   };
@@ -86,17 +90,14 @@ const Blog = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/blogs', {
+      console.log('📝 Publishing new blog:', newBlog.title);
+      const result = await apiRequest('blogs', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(newBlog),
       });
 
-      const result = await response.json();
-
       if (result.success) {
+        console.log('✅ Blog published successfully');
         // Refresh blogs list
         await fetchBlogs();
         
@@ -106,10 +107,11 @@ const Blog = () => {
         
         alert('Blog published successfully!');
       } else {
-        alert('Failed to publish blog: ' + result.message);
+        console.error('❌ Failed to publish blog:', result.error);
+        alert('Failed to publish blog: ' + result.error);
       }
     } catch (error) {
-      console.error('Error saving blog:', error);
+      console.error('❌ Error saving blog:', error);
       alert('Failed to publish blog. Please try again.');
     }
   };

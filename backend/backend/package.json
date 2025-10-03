@@ -1,0 +1,36 @@
+{
+  "name": "portfolio-backend",
+  "version": "1.0.0",
+  "description": "Backend for portfolio contact form and bulk mail",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "check-ip": "node scripts/check-ip.js",
+    "setup-email": "node scripts/setup-email.js",
+    "add-email": "node scripts/add-email-credentials.js",
+    "test-email": "node scripts/test-email.js",
+    "test-atlas": "node scripts/test-atlas.js",
+    "verify-atlas": "node scripts/verify-atlas.js",
+    "test-new-atlas": "node scripts/test-new-atlas.js",
+    "setup-gmail": "node scripts/setup-gmail.js",
+    "test-articles": "node scripts/test-articles.js",
+    "test-like": "node scripts/test-like-function.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "mongodb": "^6.20.0",
+    "mongoose": "^8.0.0",
+    "nodemailer": "^7.0.6",
+    "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": ">=8.0.0"
+  }
+}

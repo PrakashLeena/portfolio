@@ -19,6 +19,8 @@ const corsOptions = {
       'http://localhost:3001',
       /\.vercel\.app$/, // Allow all Vercel deployments
       /\.netlify\.app$/, // Allow Netlify deployments
+      /\.railway\.app$/, // Allow Railway deployments
+      /\.up\.railway\.app$/, // Allow Railway custom domains
       /^https?:\/\/localhost(:\d+)?$/, // Allow any localhost port
     ];
     
@@ -86,6 +88,17 @@ const blogSchema = new mongoose.Schema({
 });
 
 const Blog = mongoose.model("Blog", blogSchema, "Blogs");
+
+// Root endpoint for Railway health checks
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Portfolio Backend API is running',
+    timestamp: new Date().toISOString(),
+    port: process.env.PORT || 5000,
+    endpoints: ['/health', '/test', '/contact', '/sendmail', '/blogs']
+  });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -581,12 +594,14 @@ app.post("/contact", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Only start the server if not in serverless environment
-if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📧 Contact endpoint: http://localhost:${PORT}/contact`);
-    console.log(`📮 Bulk mail endpoint: http://localhost:${PORT}/sendmail`);
+// Start the server (Railway, local development, or other hosting)
+// Only skip if explicitly in a serverless environment like Netlify
+if (!process.env.NETLIFY && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📧 Contact endpoint: /contact`);
+    console.log(`📮 Bulk mail endpoint: /sendmail`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 
