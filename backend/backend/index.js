@@ -494,7 +494,7 @@ app.post("/sendmail", async (req, res) => {
       return res.json(false);
     }
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: data[0].user,
@@ -585,7 +585,7 @@ app.post("/contact", async (req, res) => {
     }
 
     // Create email transporter with Railway-compatible settings
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
       secure: false, // true for 465, false for other ports
