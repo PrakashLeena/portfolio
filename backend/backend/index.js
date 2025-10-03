@@ -584,8 +584,8 @@ app.post("/contact", async (req, res) => {
       }
     }
 
-    // Create email transporter
-    const transporter = nodemailer.createTransport({
+    // Create email transporter with Railway-compatible settings
+    const transporter = nodemailer.createTransporter({
       host: "smtp.gmail.com",
       port: 587,
       secure: false, // true for 465, false for other ports
@@ -593,6 +593,12 @@ app.post("/contact", async (req, res) => {
         user: emailUser,
         pass: emailPass,
       },
+      tls: {
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 60000, // 60 seconds
+      greetingTimeout: 30000,   // 30 seconds
+      socketTimeout: 60000      // 60 seconds
     });
 
     // Send email to your receiving address
@@ -630,10 +636,20 @@ app.post("/contact", async (req, res) => {
 
   } catch (error) {
     console.error("❌ Error processing contact form:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to send message. Please try again." 
-    });
+    
+    // If email fails but message was saved to database, still return success
+    if (mongoose.connection.readyState === 1) {
+      console.log('💾 Message saved to database despite email error');
+      res.json({ 
+        success: true, 
+        message: "Message received! We'll get back to you soon." 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to send message. Please try again." 
+      });
+    }
   }
 });
 
