@@ -4,8 +4,9 @@ const API_CONFIG = {
     baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
   },
   production: {
-    // For Vercel deployment, use relative path since frontend and backend are on same domain
-    baseURL: process.env.REACT_APP_API_URL || '/api',
+    // For Railway backend deployment, use the Railway URL
+    // You can override this with REACT_APP_API_URL environment variable
+    baseURL: process.env.REACT_APP_API_URL || 'https://your-railway-app.railway.app',
   }
 };
 
