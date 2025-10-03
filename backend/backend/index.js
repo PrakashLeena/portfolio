@@ -547,28 +547,57 @@ app.post("/contact", async (req, res) => {
       console.log('⚠️  Database not connected, skipping save');
     }
 
-    // Get email credentials from database
-    const data = await Credential.find();
-    if (!data || data.length === 0) {
-      console.log('⚠️  Email credentials not found in database');
-      return res.status(500).json({ 
-        success: false, 
-        message: "Email configuration not available" 
-      });
+    // Get email credentials from database or environment variables
+    let emailUser, emailPass;
+    
+    try {
+      const data = await Credential.find();
+      if (data && data.length > 0) {
+        emailUser = data[0].user;
+        emailPass = data[0].pass;
+        console.log('📧 Using email credentials from database');
+      } else {
+        // Fallback to environment variables
+        emailUser = process.env.EMAIL_USER || 'kiboxsonleena51@gmail.com';
+        emailPass = process.env.EMAIL_PASS;
+        console.log('📧 Using email credentials from environment variables');
+        
+        if (!emailPass) {
+          console.log('⚠️  No email credentials found in database or environment');
+          return res.status(500).json({ 
+            success: false, 
+            message: "Email configuration not available. Please contact admin." 
+          });
+        }
+      }
+    } catch (dbError) {
+      console.log('⚠️  Database error, using environment variables:', dbError.message);
+      emailUser = process.env.EMAIL_USER || 'kiboxsonleena51@gmail.com';
+      emailPass = process.env.EMAIL_PASS;
+      
+      if (!emailPass) {
+        console.log('⚠️  No email credentials available');
+        return res.status(500).json({ 
+          success: false, 
+          message: "Email configuration not available. Please contact admin." 
+        });
+      }
     }
 
     // Create email transporter
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // true for 465, false for other ports
       auth: {
-        user: data[0].user, // This should be kiboxsonleena51@gmail.com
-        pass: data[0].pass, // Gmail app password
+        user: emailUser,
+        pass: emailPass,
       },
     });
 
     // Send email to your receiving address
     await transporter.sendMail({
-      from: data[0].user, // From: kiboxsonleena51@gmail.com
+      from: emailUser,
       to: "kiboxsonleena2004@gmail.com", // To: your receiving email
       subject: `New Contact Form Message from ${name}`,
       html: `
