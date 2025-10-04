@@ -105,6 +105,14 @@ const blogSchema = new mongoose.Schema({
 
 const Blog = mongoose.model("Blog", blogSchema, "Blogs");
 
+// Portfolio likes schema
+const portfolioLikesSchema = new mongoose.Schema({
+  totalLikes: { type: Number, default: 0 },
+  lastUpdated: { type: Date, default: Date.now }
+});
+
+const PortfolioLikes = mongoose.model("PortfolioLikes", portfolioLikesSchema, "PortfolioLikes");
+
 // Root endpoint for Railway health checks
 app.get('/', (req, res) => {
   res.json({ 
@@ -112,7 +120,7 @@ app.get('/', (req, res) => {
     message: 'Portfolio Backend API is running',
     timestamp: new Date().toISOString(),
     port: process.env.PORT || 5000,
-    endpoints: ['/health', '/test', '/contact', '/sendmail', '/blogs']
+    endpoints: ['/health', '/test', '/contact', '/sendmail', '/blogs', '/portfolio/likes']
   });
 });
 
@@ -476,6 +484,107 @@ app.post('/blogs/:id/like', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to like blog: ' + error.message
+    });
+  }
+});
+
+// Portfolio likes endpoints
+
+// Get portfolio likes
+app.get('/portfolio/likes', async (req, res) => {
+  try {
+    console.log('💖 Getting portfolio likes...');
+    
+    let portfolioLikes = await PortfolioLikes.findOne();
+    
+    // If no likes document exists, create one
+    if (!portfolioLikes) {
+      portfolioLikes = new PortfolioLikes({ totalLikes: 0 });
+      await portfolioLikes.save();
+      console.log('📊 Created new portfolio likes document');
+    }
+    
+    console.log(`❤️ Current portfolio likes: ${portfolioLikes.totalLikes}`);
+    
+    res.json({
+      success: true,
+      likes: portfolioLikes.totalLikes
+    });
+  } catch (error) {
+    console.error('❌ Error fetching portfolio likes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch portfolio likes'
+    });
+  }
+});
+
+// Like portfolio
+app.post('/portfolio/like', async (req, res) => {
+  try {
+    console.log('💖 Portfolio like request received');
+    
+    let portfolioLikes = await PortfolioLikes.findOne();
+    
+    // If no likes document exists, create one
+    if (!portfolioLikes) {
+      portfolioLikes = new PortfolioLikes({ totalLikes: 1 });
+      await portfolioLikes.save();
+      console.log('📊 Created new portfolio likes document with 1 like');
+    } else {
+      const previousLikes = portfolioLikes.totalLikes;
+      portfolioLikes.totalLikes += 1;
+      portfolioLikes.lastUpdated = new Date();
+      await portfolioLikes.save();
+      console.log(`❤️ Portfolio liked: ${previousLikes} → ${portfolioLikes.totalLikes} likes`);
+    }
+    
+    res.json({
+      success: true,
+      likes: portfolioLikes.totalLikes,
+      message: 'Portfolio liked successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error liking portfolio:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to like portfolio'
+    });
+  }
+});
+
+// Unlike portfolio
+app.post('/portfolio/unlike', async (req, res) => {
+  try {
+    console.log('💔 Portfolio unlike request received');
+    
+    let portfolioLikes = await PortfolioLikes.findOne();
+    
+    if (!portfolioLikes) {
+      return res.status(404).json({
+        success: false,
+        message: 'No likes found'
+      });
+    }
+    
+    if (portfolioLikes.totalLikes > 0) {
+      const previousLikes = portfolioLikes.totalLikes;
+      portfolioLikes.totalLikes -= 1;
+      portfolioLikes.lastUpdated = new Date();
+      await portfolioLikes.save();
+      console.log(`💔 Portfolio unliked: ${previousLikes} → ${portfolioLikes.totalLikes} likes`);
+    }
+    
+    res.json({
+      success: true,
+      likes: portfolioLikes.totalLikes,
+      message: 'Portfolio unliked successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error unliking portfolio:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unlike portfolio'
     });
   }
 });

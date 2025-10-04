@@ -64,41 +64,104 @@ const Portfolio = () => {
   // Contact form state
   const { formData, isSubmitting, submitStatus, handleChange, handleSubmit } = useContactForm();
 
-  // Load likes from localStorage on component mount
+  // Load likes from backend and localStorage on component mount
   useEffect(() => {
-    const storedLikes = localStorage.getItem('portfolioLikes');
-    const userHasLiked = localStorage.getItem('userHasLiked');
+    const loadLikes = async () => {
+      try {
+        // Get current likes from backend
+        const response = await apiRequest('portfolio/likes', {
+          method: 'GET'
+        });
+        
+        if (response.success) {
+          setLikes(response.data.likes);
+          console.log(`💖 Loaded ${response.data.likes} likes from backend`);
+        }
+      } catch (error) {
+        console.error('❌ Error loading likes from backend:', error);
+        // Fallback to localStorage if backend fails
+        const storedLikes = localStorage.getItem('portfolioLikes');
+        if (storedLikes) {
+          setLikes(parseInt(storedLikes));
+        }
+      }
+      
+      // Check if user has already liked (from localStorage)
+      const userHasLiked = localStorage.getItem('userHasLiked');
+      if (userHasLiked === 'true') {
+        setHasLiked(true);
+      }
+    };
     
-    if (storedLikes) {
-      setLikes(parseInt(storedLikes));
-    }
-    if (userHasLiked === 'true') {
-      setHasLiked(true);
-    }
+    loadLikes();
   }, []);
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!hasLiked) {
+      // Optimistic update
       const newLikes = likes + 1;
       setLikes(newLikes);
       setHasLiked(true);
       setIsAnimating(true);
       
-      // Save to localStorage
-      localStorage.setItem('portfolioLikes', newLikes.toString());
-      localStorage.setItem('userHasLiked', 'true');
+      try {
+        // Send like to backend
+        const response = await apiRequest('portfolio/like', {
+          method: 'POST'
+        });
+        
+        if (response.success) {
+          // Update with actual count from backend
+          setLikes(response.data.likes);
+          console.log(`💖 Portfolio liked! Total: ${response.data.likes}`);
+          
+          // Save user's like status to localStorage
+          localStorage.setItem('userHasLiked', 'true');
+        } else {
+          // Revert optimistic update on failure
+          setLikes(likes);
+          setHasLiked(false);
+          console.error('❌ Failed to like portfolio:', response.error);
+        }
+      } catch (error) {
+        // Revert optimistic update on error
+        setLikes(likes);
+        setHasLiked(false);
+        console.error('❌ Error liking portfolio:', error);
+      }
       
       // Remove animation class after animation completes
       setTimeout(() => setIsAnimating(false), 600);
     } else {
       // Unlike functionality
-      const newLikes = likes - 1;
-      setLikes(newLikes);
+      setLikes(likes - 1);
       setHasLiked(false);
       
-      // Update localStorage
-      localStorage.setItem('portfolioLikes', newLikes.toString());
-      localStorage.setItem('userHasLiked', 'false');
+      try {
+        // Send unlike to backend
+        const response = await apiRequest('portfolio/unlike', {
+          method: 'POST'
+        });
+        
+        if (response.success) {
+          // Update with actual count from backend
+          setLikes(response.data.likes);
+          console.log(`💔 Portfolio unliked! Total: ${response.data.likes}`);
+          
+          // Update user's like status in localStorage
+          localStorage.setItem('userHasLiked', 'false');
+        } else {
+          // Revert optimistic update on failure
+          setLikes(likes);
+          setHasLiked(true);
+          console.error('❌ Failed to unlike portfolio:', response.error);
+        }
+      } catch (error) {
+        // Revert optimistic update on error
+        setLikes(likes);
+        setHasLiked(true);
+        console.error('❌ Error unliking portfolio:', error);
+      }
     }
   };
 
