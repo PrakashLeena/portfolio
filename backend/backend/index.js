@@ -2,10 +2,82 @@ const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const connectDB = require("./config/database");
 require('dotenv').config();
 
 const app = express();
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('📁 Created uploads directory');
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Create unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'project-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept images only
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  }
+});
+
+// Configure multer for PDF resume uploads
+const resumeStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Create unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'resume-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadResume = multer({
+  storage: resumeStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit for PDFs
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept PDF files only
+    const allowedTypes = /pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = file.mimetype === 'application/pdf';
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed for resume!'));
+    }
+  }
+});
 
 // Middleware
 const corsOptions = {
@@ -67,6 +139,10 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(uploadsDir));
+console.log('📂 Serving uploads from:', uploadsDir);
+
 // Connect to MongoDB Atlas (with error handling)
 connectDB().catch(err => {
   console.log('⚠️  MongoDB connection failed, running without database');
@@ -112,6 +188,63 @@ const portfolioLikesSchema = new mongoose.Schema({
 });
 
 const PortfolioLikes = mongoose.model("PortfolioLikes", portfolioLikesSchema, "PortfolioLikes");
+
+// Project schema
+const projectSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  technologies: String,
+  githubUrl: String,
+  liveUrl: String,
+  image: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Project = mongoose.model("Project", projectSchema, "Projects");
+
+// Work Experience schema
+const experienceSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  company: { type: String, required: true },
+  duration: String,
+  description: String,
+  skills: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Experience = mongoose.model("Experience", experienceSchema, "Experiences");
+
+// Technical Skills schema
+const skillSchema = new mongoose.Schema({
+  category: { type: String, required: true },
+  skills: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Skill = mongoose.model("Skill", skillSchema, "Skills");
+
+// Certification schema
+const certificationSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  issuer: { type: String, required: true },
+  date: String,
+  credentialUrl: String,
+  description: String,
+  image: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Certification = mongoose.model("Certification", certificationSchema, "Certifications");
+
+// Resume schema
+const resumeSchema = new mongoose.Schema({
+  fileName: { type: String, required: true },
+  fileUrl: { type: String, required: true },
+  uploadedAt: { type: Date, default: Date.now },
+  isActive: { type: Boolean, default: true }
+});
+
+const Resume = mongoose.model("Resume", resumeSchema, "Resumes");
 
 // Root endpoint for Railway health checks
 app.get('/', (req, res) => {
@@ -169,132 +302,665 @@ app.post('/admin/login', (req, res) => {
   }
 });
 
+// File upload endpoint
+app.post('/upload', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    // Return the file path that can be used to access the image
+    const fileUrl = `/uploads/${req.file.filename}`;
+    
+    console.log('📸 Image uploaded successfully:', req.file.filename);
+    
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      fileUrl: fileUrl,
+      filename: req.file.filename
+    });
+  } catch (error) {
+    console.error('❌ Error uploading file:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading file',
+      error: error.message
+    });
+  }
+});
+
+// Resume file upload endpoint
+app.post('/upload-resume', uploadResume.single('resume'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No resume file uploaded'
+      });
+    }
+
+    // Return the file path that can be used to access the resume
+    const fileUrl = `/uploads/${req.file.filename}`;
+    
+    console.log('📄 Resume uploaded successfully:', req.file.filename);
+    
+    res.json({
+      success: true,
+      message: 'Resume uploaded successfully',
+      fileUrl: fileUrl,
+      filename: req.file.filename,
+      originalName: req.file.originalname
+    });
+  } catch (error) {
+    console.error('❌ Error uploading resume:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload resume',
+      error: error.message
+    });
+  }
+});
+
 // Admin Dashboard Endpoints
 
 // Projects endpoints
+// GET all projects
+app.get('/projects', async (req, res) => {
+  try {
+    console.log('📋 Fetching all projects...');
+    const projects = await Project.find().sort({ createdAt: -1 });
+    console.log(`✅ Retrieved ${projects.length} projects`);
+    
+    res.json({
+      success: true,
+      projects: projects
+    });
+  } catch (error) {
+    console.error('❌ Error fetching projects:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch projects',
+      error: error.message
+    });
+  }
+});
+
+// POST new project
 app.post('/projects', async (req, res) => {
   try {
     const { title, description, technologies, githubUrl, liveUrl, image } = req.body;
     
     console.log('💼 Adding new project:', title);
     
-    // For now, just log the project data
-    // In a real app, you'd save to database
-    const projectData = {
+    // Create new project in database
+    const newProject = new Project({
       title,
       description,
       technologies,
       githubUrl,
       liveUrl,
-      image,
-      createdAt: new Date()
-    };
+      image
+    });
     
-    console.log('📊 Project data:', projectData);
+    await newProject.save();
+    console.log('✅ Project saved to database:', newProject._id);
     
     res.json({
       success: true,
       message: 'Project added successfully',
-      project: projectData
+      project: newProject
     });
   } catch (error) {
     console.error('❌ Error adding project:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add project'
+      message: 'Failed to add project',
+      error: error.message
+    });
+  }
+});
+
+// DELETE project
+app.delete('/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🗑️ Deleting project:', id);
+    
+    const deletedProject = await Project.findByIdAndDelete(id);
+    
+    if (!deletedProject) {
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+    
+    // Delete associated image file if it exists
+    if (deletedProject.image && deletedProject.image.startsWith('/uploads/')) {
+      const imagePath = path.join(__dirname, deletedProject.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+        console.log('🗑️ Deleted image file:', imagePath);
+      }
+    }
+    
+    console.log('✅ Project deleted successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Project deleted successfully',
+      project: deletedProject
+    });
+  } catch (error) {
+    console.error('❌ Error deleting project:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete project',
+      error: error.message
     });
   }
 });
 
 // Work Experience endpoints
+// GET all experiences
+app.get('/experiences', async (req, res) => {
+  try {
+    console.log('📋 Fetching all experiences...');
+    const experiences = await Experience.find().sort({ createdAt: -1 });
+    console.log(`✅ Retrieved ${experiences.length} experiences`);
+    
+    res.json({
+      success: true,
+      experiences: experiences
+    });
+  } catch (error) {
+    console.error('❌ Error fetching experiences:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch experiences',
+      error: error.message
+    });
+  }
+});
+
+// POST new experience
 app.post('/experiences', async (req, res) => {
   try {
     const { title, company, duration, description, skills } = req.body;
     
     console.log('👨‍💻 Adding new experience:', title, 'at', company);
     
-    const experienceData = {
+    const newExperience = new Experience({
       title,
       company,
       duration,
       description,
-      skills,
-      createdAt: new Date()
-    };
+      skills
+    });
     
-    console.log('📊 Experience data:', experienceData);
+    await newExperience.save();
+    console.log('✅ Experience saved to database:', newExperience._id);
     
     res.json({
       success: true,
       message: 'Work experience added successfully',
-      experience: experienceData
+      experience: newExperience
     });
   } catch (error) {
     console.error('❌ Error adding experience:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add experience'
+      message: 'Failed to add experience',
+      error: error.message
+    });
+  }
+});
+
+// PUT (update) experience
+app.put('/experiences/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, company, duration, description, skills } = req.body;
+    
+    console.log('✏️ Updating experience:', id);
+    
+    const updatedExperience = await Experience.findByIdAndUpdate(
+      id,
+      { title, company, duration, description, skills },
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedExperience) {
+      return res.status(404).json({
+        success: false,
+        message: 'Experience not found'
+      });
+    }
+    
+    console.log('✅ Experience updated successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Experience updated successfully',
+      experience: updatedExperience
+    });
+  } catch (error) {
+    console.error('❌ Error updating experience:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update experience',
+      error: error.message
+    });
+  }
+});
+
+// DELETE experience
+app.delete('/experiences/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🗑️ Deleting experience:', id);
+    
+    const deletedExperience = await Experience.findByIdAndDelete(id);
+    
+    if (!deletedExperience) {
+      return res.status(404).json({
+        success: false,
+        message: 'Experience not found'
+      });
+    }
+    
+    console.log('✅ Experience deleted successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Experience deleted successfully',
+      experience: deletedExperience
+    });
+  } catch (error) {
+    console.error('❌ Error deleting experience:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete experience',
+      error: error.message
     });
   }
 });
 
 // Technical Skills endpoints
+// GET all skills
+app.get('/skills', async (req, res) => {
+  try {
+    console.log('📋 Fetching all skills...');
+    const skills = await Skill.find().sort({ createdAt: -1 });
+    console.log(`✅ Retrieved ${skills.length} skill categories`);
+    
+    res.json({
+      success: true,
+      skills: skills
+    });
+  } catch (error) {
+    console.error('❌ Error fetching skills:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch skills',
+      error: error.message
+    });
+  }
+});
+
+// POST new skill
 app.post('/skills', async (req, res) => {
   try {
     const { category, skills } = req.body;
     
     console.log('⚡ Adding new skill category:', category);
     
-    const skillData = {
+    const newSkill = new Skill({
       category,
-      skills,
-      createdAt: new Date()
-    };
+      skills
+    });
     
-    console.log('📊 Skill data:', skillData);
+    await newSkill.save();
+    console.log('✅ Skill saved to database:', newSkill._id);
     
     res.json({
       success: true,
       message: 'Technical skill added successfully',
-      skill: skillData
+      skill: newSkill
     });
   } catch (error) {
     console.error('❌ Error adding skill:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add skill'
+      message: 'Failed to add skill',
+      error: error.message
+    });
+  }
+});
+
+// PUT (update) skill
+app.put('/skills/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category, skills } = req.body;
+    
+    console.log('✏️ Updating skill:', id);
+    
+    const updatedSkill = await Skill.findByIdAndUpdate(
+      id,
+      { category, skills },
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedSkill) {
+      return res.status(404).json({
+        success: false,
+        message: 'Skill not found'
+      });
+    }
+    
+    console.log('✅ Skill updated successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Skill updated successfully',
+      skill: updatedSkill
+    });
+  } catch (error) {
+    console.error('❌ Error updating skill:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update skill',
+      error: error.message
+    });
+  }
+});
+
+// DELETE skill
+app.delete('/skills/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🗑️ Deleting skill:', id);
+    
+    const deletedSkill = await Skill.findByIdAndDelete(id);
+    
+    if (!deletedSkill) {
+      return res.status(404).json({
+        success: false,
+        message: 'Skill not found'
+      });
+    }
+    
+    console.log('✅ Skill deleted successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Skill deleted successfully',
+      skill: deletedSkill
+    });
+  } catch (error) {
+    console.error('❌ Error deleting skill:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete skill',
+      error: error.message
     });
   }
 });
 
 // Certifications endpoints
+// GET all certifications
+app.get('/certifications', async (req, res) => {
+  try {
+    console.log('📋 Fetching all certifications...');
+    const certifications = await Certification.find().sort({ createdAt: -1 });
+    console.log(`✅ Retrieved ${certifications.length} certifications`);
+    
+    res.json({
+      success: true,
+      certifications: certifications
+    });
+  } catch (error) {
+    console.error('❌ Error fetching certifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch certifications',
+      error: error.message
+    });
+  }
+});
+
+// POST new certification
 app.post('/certifications', async (req, res) => {
   try {
-    const { title, issuer, date, credentialUrl, description } = req.body;
+    const { title, issuer, date, credentialUrl, description, image } = req.body;
     
     console.log('🏆 Adding new certification:', title, 'from', issuer);
     
-    const certificationData = {
+    const newCertification = new Certification({
       title,
       issuer,
       date,
       credentialUrl,
       description,
-      createdAt: new Date()
-    };
+      image
+    });
     
-    console.log('📊 Certification data:', certificationData);
+    await newCertification.save();
+    console.log('✅ Certification saved to database:', newCertification._id);
     
     res.json({
       success: true,
       message: 'Certification added successfully',
-      certification: certificationData
+      certification: newCertification
     });
   } catch (error) {
     console.error('❌ Error adding certification:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add certification'
+      message: 'Failed to add certification',
+      error: error.message
+    });
+  }
+});
+
+// PUT (update) certification
+app.put('/certifications/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, issuer, date, credentialUrl, description, image } = req.body;
+    
+    console.log('✏️ Updating certification:', id);
+    
+    const updatedCertification = await Certification.findByIdAndUpdate(
+      id,
+      { title, issuer, date, credentialUrl, description, image },
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedCertification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Certification not found'
+      });
+    }
+    
+    console.log('✅ Certification updated successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Certification updated successfully',
+      certification: updatedCertification
+    });
+  } catch (error) {
+    console.error('❌ Error updating certification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update certification',
+      error: error.message
+    });
+  }
+});
+
+// DELETE certification
+app.delete('/certifications/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🗑️ Deleting certification:', id);
+    
+    const deletedCertification = await Certification.findByIdAndDelete(id);
+    
+    if (!deletedCertification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Certification not found'
+      });
+    }
+    
+    // Delete associated image file if it exists
+    if (deletedCertification.image && deletedCertification.image.startsWith('/uploads/')) {
+      const imagePath = path.join(__dirname, deletedCertification.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+        console.log('🗑️ Deleted image file:', imagePath);
+      }
+    }
+    
+    console.log('✅ Certification deleted successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Certification deleted successfully',
+      certification: deletedCertification
+    });
+  } catch (error) {
+    console.error('❌ Error deleting certification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete certification',
+      error: error.message
+    });
+  }
+});
+
+// Resume endpoints
+// Upload resume (using existing upload endpoint, then save metadata)
+app.post('/resume', async (req, res) => {
+  try {
+    const { fileName, fileUrl } = req.body;
+    
+    if (!fileName || !fileUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'fileName and fileUrl are required'
+      });
+    }
+    
+    console.log('📄 Uploading resume:', fileName);
+    
+    // Deactivate all previous resumes
+    await Resume.updateMany({}, { isActive: false });
+    
+    // Create new resume entry
+    const newResume = new Resume({
+      fileName,
+      fileUrl,
+      isActive: true
+    });
+    
+    await newResume.save();
+    console.log('✅ Resume saved to database:', newResume._id);
+    
+    res.json({
+      success: true,
+      message: 'Resume uploaded successfully',
+      resume: newResume
+    });
+  } catch (error) {
+    console.error('❌ Error uploading resume:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload resume',
+      error: error.message
+    });
+  }
+});
+
+// Get active resume
+app.get('/resume', async (req, res) => {
+  try {
+    console.log('📋 Fetching active resume...');
+    const resume = await Resume.findOne({ isActive: true }).sort({ uploadedAt: -1 });
+    
+    if (!resume) {
+      return res.json({
+        success: true,
+        resume: null
+      });
+    }
+    
+    console.log('✅ Active resume found:', resume.fileName);
+    
+    res.json({
+      success: true,
+      resume: resume
+    });
+  } catch (error) {
+    console.error('❌ Error fetching resume:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch resume',
+      error: error.message
+    });
+  }
+});
+
+// Delete resume
+app.delete('/resume/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🗑️ Deleting resume:', id);
+    
+    const deletedResume = await Resume.findByIdAndDelete(id);
+    
+    if (!deletedResume) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resume not found'
+      });
+    }
+    
+    // Delete associated file if it exists
+    if (deletedResume.fileUrl && deletedResume.fileUrl.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, deletedResume.fileUrl);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log('🗑️ Deleted resume file:', filePath);
+      }
+    }
+    
+    console.log('✅ Resume deleted successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Resume deleted successfully',
+      resume: deletedResume
+    });
+  } catch (error) {
+    console.error('❌ Error deleting resume:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete resume',
+      error: error.message
     });
   }
 });

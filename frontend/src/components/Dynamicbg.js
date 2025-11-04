@@ -37,21 +37,43 @@ const Dynamicbg = () => {
     <>
       {/* Dynamic Moving Background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        {/* Animated Gradient Background */}
+        {/* Animated Gradient Background - Professional Dark Theme */}
         <div 
-          className="absolute inset-0 opacity-90 animate-gradient-shift"
+          className="absolute inset-0 opacity-95 animate-gradient-shift"
           style={{
-            background: 'linear-gradient(-45deg, #150734, #2d1b69, #4a2c85, #5e42a6, #b74e91)',
+            background: 'linear-gradient(-45deg, #0a0e27, #1a1f3a, #2d1b4e, #1e1b3c, #0f0f23, #1a0b2e)',
             backgroundSize: '400% 400%',
           }}
         ></div>
 
-        {/* Radial gradient overlays for depth */}
+        {/* Radial gradient overlays for depth - Enhanced Professional Look */}
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(circle at 20% 80%, rgba(255, 174, 66, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 174, 66, 0.1) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)',
-            animation: 'backgroundPulse 20s ease-in-out infinite',
+            background: `
+              radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+              radial-gradient(circle at 85% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 45%),
+              radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 70% 30%, rgba(168, 85, 247, 0.1) 0%, transparent 40%),
+              radial-gradient(circle at 30% 70%, rgba(14, 165, 233, 0.08) 0%, transparent 45%)
+            `,
+            animation: 'backgroundPulse 25s ease-in-out infinite',
+          }}
+        ></div>
+
+        {/* Mesh Gradient Overlay for Modern Look */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-30"
+          style={{
+            background: `
+              radial-gradient(at 40% 20%, rgba(139, 92, 246, 0.3) 0px, transparent 50%),
+              radial-gradient(at 80% 0%, rgba(236, 72, 153, 0.25) 0px, transparent 50%),
+              radial-gradient(at 0% 50%, rgba(59, 130, 246, 0.2) 0px, transparent 50%),
+              radial-gradient(at 80% 50%, rgba(168, 85, 247, 0.25) 0px, transparent 50%),
+              radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.2) 0px, transparent 50%),
+              radial-gradient(at 80% 100%, rgba(236, 72, 153, 0.2) 0px, transparent 50%)
+            `,
+            filter: 'blur(60px)',
           }}
         ></div>
         
@@ -70,7 +92,7 @@ const Dynamicbg = () => {
                 animationDuration: `${shape.duration}s`,
               }}
             >
-              <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500 rounded-full animate-rotate-slow"></div>
+              <div className="w-full h-full bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-full animate-rotate-slow blur-sm"></div>
             </div>
           ))}
         </div>
@@ -87,7 +109,7 @@ const Dynamicbg = () => {
                 top: `${particle.top}%`,
                 width: `${particle.size}px`,
                 height: `${particle.size}px`,
-                background: 'rgba(255, 174, 66, 0.3)',
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(139, 92, 246, 0.3))',
                 animationDelay: `${particle.delay}s`,
                 animationDuration: `${particle.duration}s`,
               }}
@@ -106,7 +128,7 @@ const Dynamicbg = () => {
                 top: `${orb.top}%`,
                 width: `${orb.size}px`,
                 height: `${orb.size}px`,
-                background: 'radial-gradient(circle, rgba(183, 78, 145, 0.3) 0%, rgba(94, 66, 166, 0.2) 50%, transparent 100%)',
+                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, rgba(59, 130, 246, 0.15) 50%, transparent 100%)',
                 animationDelay: `${orb.delay}s`,
               }}
             ></div>
@@ -128,14 +150,14 @@ const Dynamicbg = () => {
             />
             <defs>
               <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#5e42a6" stopOpacity="0.3" />
-                <stop offset="50%" stopColor="#b74e91" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#5e42a6" stopOpacity="0.3" />
+                <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.25" />
+                <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.25" />
               </linearGradient>
               <linearGradient id="wave-gradient-2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#b74e91" stopOpacity="0.2" />
-                <stop offset="50%" stopColor="#953d75" stopOpacity="0.1" />
-                <stop offset="100%" stopColor="#b74e91" stopOpacity="0.2" />
+                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
+                <stop offset="50%" stopColor="#a855f7" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#6366f1" stopOpacity="0.2" />
               </linearGradient>
             </defs>
           </svg>

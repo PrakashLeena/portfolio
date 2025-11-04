@@ -44,3 +44,6 @@ logs
 .idea/
 *.swp
 *.swo
+
+# Uploaded files
+uploads/

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { apiRequest } from '../config/api';
+import { apiRequest, API_BASE_URL } from '../config/api';
 
 const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -23,6 +23,19 @@ const AdminDashboard = () => {
     image: ''
   });
   
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // Projects list state
+  const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  
+  // Experiences list state
+  const [experiences, setExperiences] = useState([]);
+  const [loadingExperiences, setLoadingExperiences] = useState(false);
+  const [editingExperience, setEditingExperience] = useState(null);
+  
   const [newExperience, setNewExperience] = useState({
     title: '',
     company: '',
@@ -31,10 +44,23 @@ const AdminDashboard = () => {
     skills: ''
   });
   
+  // Skills list state
+  const [skillsList, setSkillsList] = useState([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  const [editingSkill, setEditingSkill] = useState(null);
+  
   const [newSkill, setNewSkill] = useState({
     category: '',
     skills: ''
   });
+  
+  // Certifications list state
+  const [certifications, setCertifications] = useState([]);
+  const [loadingCertifications, setLoadingCertifications] = useState(false);
+  const [editingCertification, setEditingCertification] = useState(null);
+  const [certImageFile, setCertImageFile] = useState(null);
+  const [certImagePreview, setCertImagePreview] = useState(null);
+  const [uploadingCertImage, setUploadingCertImage] = useState(false);
   
   const [newCertification, setNewCertification] = useState({
     title: '',
@@ -43,6 +69,12 @@ const AdminDashboard = () => {
     credentialUrl: '',
     description: ''
   });
+
+  // Resume state
+  const [currentResume, setCurrentResume] = useState(null);
+  const [loadingResume, setLoadingResume] = useState(false);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [uploadingResume, setUploadingResume] = useState(false);
 
   useEffect(() => {
     // Check if admin is already logged in
@@ -53,6 +85,41 @@ const AdminDashboard = () => {
       setShowAdminLogin(true);
     }
   }, []);
+
+  // Fetch projects when projects section is active
+  useEffect(() => {
+    if (isAdmin && activeSection === 'projects') {
+      fetchProjects();
+    }
+  }, [isAdmin, activeSection]);
+
+  // Fetch experiences when experience section is active
+  useEffect(() => {
+    if (isAdmin && activeSection === 'experience') {
+      fetchExperiences();
+    }
+  }, [isAdmin, activeSection]);
+
+  // Fetch skills when skills section is active
+  useEffect(() => {
+    if (isAdmin && activeSection === 'skills') {
+      fetchSkills();
+    }
+  }, [isAdmin, activeSection]);
+
+  // Fetch certifications when certifications section is active
+  useEffect(() => {
+    if (isAdmin && activeSection === 'certifications') {
+      fetchCertifications();
+    }
+  }, [isAdmin, activeSection]);
+
+  // Fetch resume when resume section is active
+  useEffect(() => {
+    if (isAdmin && activeSection === 'resume') {
+      fetchResume();
+    }
+  }, [isAdmin, activeSection]);
 
   // Admin authentication
   const handleAdminLogin = async () => {
@@ -102,6 +169,33 @@ const AdminDashboard = () => {
     setShowAdminLogin(true);
   };
 
+  // Handle image file selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
   // Save functions
   const handleSaveProject = async () => {
     if (!newProject.title || !newProject.description) {
@@ -110,14 +204,46 @@ const AdminDashboard = () => {
     }
 
     try {
+      let imageUrl = '';
+      
+      // Upload image if selected
+      if (imageFile) {
+        setUploadingImage(true);
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        console.log('📸 Uploading image...');
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const uploadResult = await uploadResponse.json();
+        
+        if (uploadResult.success) {
+          imageUrl = uploadResult.fileUrl;
+          console.log('✅ Image uploaded:', imageUrl);
+        } else {
+          throw new Error('Failed to upload image');
+        }
+        
+        setUploadingImage(false);
+      }
+      
       console.log('💼 Adding new project:', newProject.title);
+      const projectData = {
+        ...newProject,
+        image: imageUrl
+      };
+      
       const result = await apiRequest('projects', {
         method: 'POST',
-        body: JSON.stringify(newProject),
+        body: JSON.stringify(projectData),
       });
 
       if (result.success) {
         console.log('✅ Project added successfully');
+        console.log('📊 Project data:', result.data);
         alert('Project added successfully!');
         setNewProject({
           title: '',
@@ -127,13 +253,158 @@ const AdminDashboard = () => {
           liveUrl: '',
           image: ''
         });
+        setImageFile(null);
+        setImagePreview(null);
+        // Refresh projects list
+        await fetchProjects();
       } else {
         console.error('❌ Failed to add project:', result.error);
-        alert('Failed to add project: ' + result.error);
+        alert('Failed to add project: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Error saving project:', error);
-      alert('Failed to save project. Please try again.');
+      console.error('❌ Error saving project:', error);
+      console.error('Error details:', error.message, error.stack);
+      alert('Failed to save project: ' + error.message);
+      setUploadingImage(false);
+    }
+  };
+
+  // Fetch projects
+  const fetchProjects = async () => {
+    setLoadingProjects(true);
+    try {
+      console.log('📋 Fetching projects...');
+      const result = await apiRequest('projects');
+      
+      if (result.success && result.data.projects) {
+        console.log('✅ Projects fetched:', result.data.projects);
+        setProjects(result.data.projects);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching projects:', error);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  // Delete project
+  const handleDeleteProject = async (projectId) => {
+    if (!window.confirm('Are you sure you want to delete this project?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting project:', projectId);
+      const result = await apiRequest(`projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (result.success) {
+        console.log('✅ Project deleted successfully');
+        alert('Project deleted successfully!');
+        // Refresh projects list
+        fetchProjects();
+      } else {
+        console.error('❌ Failed to delete project:', result.error);
+        alert('Failed to delete project: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Failed to delete project. Please try again.');
+    }
+  };
+
+  // Fetch experiences
+  const fetchExperiences = async () => {
+    setLoadingExperiences(true);
+    try {
+      console.log('📋 Fetching experiences...');
+      const result = await apiRequest('experiences');
+      
+      if (result.success && result.data.experiences) {
+        console.log('✅ Experiences fetched:', result.data.experiences);
+        setExperiences(result.data.experiences);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching experiences:', error);
+    } finally {
+      setLoadingExperiences(false);
+    }
+  };
+
+  // Delete experience
+  const handleDeleteExperience = async (experienceId) => {
+    if (!window.confirm('Are you sure you want to delete this experience?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting experience:', experienceId);
+      const result = await apiRequest(`experiences/${experienceId}`, {
+        method: 'DELETE',
+      });
+
+      if (result.success) {
+        console.log('✅ Experience deleted successfully');
+        alert('Experience deleted successfully!');
+        fetchExperiences();
+      } else {
+        console.error('❌ Failed to delete experience:', result.error);
+        alert('Failed to delete experience: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting experience:', error);
+      alert('Failed to delete experience. Please try again.');
+    }
+  };
+
+  // Edit experience
+  const handleEditExperience = (experience) => {
+    setEditingExperience(experience._id);
+    setNewExperience({
+      title: experience.title,
+      company: experience.company,
+      duration: experience.duration || '',
+      description: experience.description || '',
+      skills: experience.skills || ''
+    });
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Update experience
+  const handleUpdateExperience = async () => {
+    if (!newExperience.title || !newExperience.company) {
+      alert('Please fill in title and company');
+      return;
+    }
+
+    try {
+      console.log('✏️ Updating experience:', editingExperience);
+      const result = await apiRequest(`experiences/${editingExperience}`, {
+        method: 'PUT',
+        body: JSON.stringify(newExperience),
+      });
+
+      if (result.success) {
+        console.log('✅ Experience updated successfully');
+        alert('Experience updated successfully!');
+        setNewExperience({
+          title: '',
+          company: '',
+          duration: '',
+          description: '',
+          skills: ''
+        });
+        setEditingExperience(null);
+        fetchExperiences();
+      } else {
+        console.error('❌ Failed to update experience:', result.error);
+        alert('Failed to update experience: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error updating experience:', error);
+      alert('Failed to update experience. Please try again.');
     }
   };
 
@@ -160,6 +431,7 @@ const AdminDashboard = () => {
           description: '',
           skills: ''
         });
+        fetchExperiences();
       } else {
         console.error('❌ Failed to add experience:', result.error);
         alert('Failed to add work experience: ' + result.error);
@@ -167,6 +439,93 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error saving experience:', error);
       alert('Failed to save experience. Please try again.');
+    }
+  };
+
+  // Fetch skills
+  const fetchSkills = async () => {
+    setLoadingSkills(true);
+    try {
+      console.log('📋 Fetching skills...');
+      const result = await apiRequest('skills');
+      
+      if (result.success && result.data.skills) {
+        console.log('✅ Skills fetched:', result.data.skills);
+        setSkillsList(result.data.skills);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching skills:', error);
+    } finally {
+      setLoadingSkills(false);
+    }
+  };
+
+  // Delete skill
+  const handleDeleteSkill = async (skillId) => {
+    if (!window.confirm('Are you sure you want to delete this skill category?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting skill:', skillId);
+      const result = await apiRequest(`skills/${skillId}`, {
+        method: 'DELETE',
+      });
+
+      if (result.success) {
+        console.log('✅ Skill deleted successfully');
+        alert('Skill deleted successfully!');
+        fetchSkills();
+      } else {
+        console.error('❌ Failed to delete skill:', result.error);
+        alert('Failed to delete skill: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting skill:', error);
+      alert('Failed to delete skill. Please try again.');
+    }
+  };
+
+  // Edit skill
+  const handleEditSkill = (skill) => {
+    setEditingSkill(skill._id);
+    setNewSkill({
+      category: skill.category,
+      skills: skill.skills
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Update skill
+  const handleUpdateSkill = async () => {
+    if (!newSkill.category || !newSkill.skills) {
+      alert('Please fill in category and skills');
+      return;
+    }
+
+    try {
+      console.log('✏️ Updating skill:', editingSkill);
+      const result = await apiRequest(`skills/${editingSkill}`, {
+        method: 'PUT',
+        body: JSON.stringify(newSkill),
+      });
+
+      if (result.success) {
+        console.log('✅ Skill updated successfully');
+        alert('Skill updated successfully!');
+        setNewSkill({
+          category: '',
+          skills: ''
+        });
+        setEditingSkill(null);
+        fetchSkills();
+      } else {
+        console.error('❌ Failed to update skill:', result.error);
+        alert('Failed to update skill: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error updating skill:', error);
+      alert('Failed to update skill. Please try again.');
     }
   };
 
@@ -190,6 +549,7 @@ const AdminDashboard = () => {
           category: '',
           skills: ''
         });
+        fetchSkills();
       } else {
         console.error('❌ Failed to add skill:', result.error);
         alert('Failed to add technical skill: ' + result.error);
@@ -200,6 +560,163 @@ const AdminDashboard = () => {
     }
   };
 
+  // Handle certificate image change
+  const handleCertImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      
+      setCertImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCertImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Fetch certifications
+  const fetchCertifications = async () => {
+    setLoadingCertifications(true);
+    try {
+      console.log('📋 Fetching certifications...');
+      const result = await apiRequest('certifications');
+      
+      if (result.success && result.data.certifications) {
+        console.log('✅ Certifications fetched:', result.data.certifications);
+        setCertifications(result.data.certifications);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching certifications:', error);
+    } finally {
+      setLoadingCertifications(false);
+    }
+  };
+
+  // Delete certification
+  const handleDeleteCertification = async (certificationId) => {
+    if (!window.confirm('Are you sure you want to delete this certification?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting certification:', certificationId);
+      const result = await apiRequest(`certifications/${certificationId}`, {
+        method: 'DELETE',
+      });
+
+      if (result.success) {
+        console.log('✅ Certification deleted successfully');
+        alert('Certification deleted successfully!');
+        fetchCertifications();
+      } else {
+        console.error('❌ Failed to delete certification:', result.error);
+        alert('Failed to delete certification: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting certification:', error);
+      alert('Failed to delete certification. Please try again.');
+    }
+  };
+
+  // Edit certification
+  const handleEditCertification = (certification) => {
+    setEditingCertification(certification._id);
+    setNewCertification({
+      title: certification.title,
+      issuer: certification.issuer,
+      date: certification.date || '',
+      credentialUrl: certification.credentialUrl || '',
+      description: certification.description || ''
+    });
+    if (certification.image) {
+      setCertImagePreview(`${API_BASE_URL}${certification.image}`);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Update certification
+  const handleUpdateCertification = async () => {
+    if (!newCertification.title || !newCertification.issuer) {
+      alert('Please fill in title and issuer');
+      return;
+    }
+
+    try {
+      let imageUrl = '';
+      
+      // Upload new image if selected
+      if (certImageFile) {
+        setUploadingCertImage(true);
+        const formData = new FormData();
+        formData.append('image', certImageFile);
+        
+        console.log('📸 Uploading certificate image...');
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const uploadResult = await uploadResponse.json();
+        
+        if (uploadResult.success) {
+          imageUrl = uploadResult.fileUrl;
+          console.log('✅ Certificate image uploaded:', imageUrl);
+        } else {
+          throw new Error('Failed to upload certificate image');
+        }
+        
+        setUploadingCertImage(false);
+      }
+
+      console.log('✏️ Updating certification:', editingCertification);
+      const certificationData = {
+        ...newCertification,
+        ...(imageUrl && { image: imageUrl })
+      };
+      
+      const result = await apiRequest(`certifications/${editingCertification}`, {
+        method: 'PUT',
+        body: JSON.stringify(certificationData),
+      });
+
+      if (result.success) {
+        console.log('✅ Certification updated successfully');
+        alert('Certification updated successfully!');
+        setNewCertification({
+          title: '',
+          issuer: '',
+          date: '',
+          credentialUrl: '',
+          description: ''
+        });
+        setCertImageFile(null);
+        setCertImagePreview(null);
+        setEditingCertification(null);
+        fetchCertifications();
+      } else {
+        console.error('❌ Failed to update certification:', result.error);
+        alert('Failed to update certification: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error updating certification:', error);
+      alert('Failed to update certification. Please try again.');
+      setUploadingCertImage(false);
+    }
+  };
+
   const handleSaveCertification = async () => {
     if (!newCertification.title || !newCertification.issuer) {
       alert('Please fill in title and issuer');
@@ -207,10 +724,41 @@ const AdminDashboard = () => {
     }
 
     try {
+      let imageUrl = '';
+      
+      // Upload image if selected
+      if (certImageFile) {
+        setUploadingCertImage(true);
+        const formData = new FormData();
+        formData.append('image', certImageFile);
+        
+        console.log('📸 Uploading certificate image...');
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const uploadResult = await uploadResponse.json();
+        
+        if (uploadResult.success) {
+          imageUrl = uploadResult.fileUrl;
+          console.log('✅ Certificate image uploaded:', imageUrl);
+        } else {
+          throw new Error('Failed to upload certificate image');
+        }
+        
+        setUploadingCertImage(false);
+      }
+
       console.log('🏆 Adding new certification:', newCertification.title, 'from', newCertification.issuer);
+      const certificationData = {
+        ...newCertification,
+        image: imageUrl
+      };
+      
       const result = await apiRequest('certifications', {
         method: 'POST',
-        body: JSON.stringify(newCertification),
+        body: JSON.stringify(certificationData),
       });
 
       if (result.success) {
@@ -223,6 +771,9 @@ const AdminDashboard = () => {
           credentialUrl: '',
           description: ''
         });
+        setCertImageFile(null);
+        setCertImagePreview(null);
+        fetchCertifications();
       } else {
         console.error('❌ Failed to add certification:', result.error);
         alert('Failed to add certification: ' + result.error);
@@ -230,6 +781,130 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error saving certification:', error);
       alert('Failed to save certification. Please try again.');
+    }
+  };
+
+  // Resume functions
+  const fetchResume = async () => {
+    setLoadingResume(true);
+    try {
+      console.log('📋 Fetching resume...');
+      const result = await apiRequest('resume');
+      
+      if (result.success && result.data.resume) {
+        console.log('✅ Resume fetched:', result.data.resume);
+        setCurrentResume(result.data.resume);
+      } else {
+        setCurrentResume(null);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching resume:', error);
+      setCurrentResume(null);
+    } finally {
+      setLoadingResume(false);
+    }
+  };
+
+  const handleResumeFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (file.type !== 'application/pdf') {
+        alert('Please select a PDF file');
+        return;
+      }
+      
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Resume file size should be less than 10MB');
+        return;
+      }
+      
+      setResumeFile(file);
+    }
+  };
+
+  const handleUploadResume = async () => {
+    if (!resumeFile) {
+      alert('Please select a resume file');
+      return;
+    }
+
+    try {
+      setUploadingResume(true);
+      
+      // Upload the PDF file
+      const formData = new FormData();
+      formData.append('resume', resumeFile);
+      
+      console.log('📄 Uploading resume file...');
+      const uploadResponse = await fetch(`${API_BASE_URL}/upload-resume`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const uploadResult = await uploadResponse.json();
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.message || 'Failed to upload resume file');
+      }
+      
+      console.log('✅ Resume file uploaded:', uploadResult.fileUrl);
+      
+      // Save resume metadata to database
+      const result = await apiRequest('resume', {
+        method: 'POST',
+        body: JSON.stringify({
+          fileName: uploadResult.originalName,
+          fileUrl: uploadResult.fileUrl
+        }),
+      });
+
+      if (result.success) {
+        console.log('✅ Resume saved successfully');
+        alert('Resume uploaded successfully!');
+        setResumeFile(null);
+        // Clear file input
+        const fileInput = document.querySelector('input[type="file"][accept=".pdf"]');
+        if (fileInput) fileInput.value = '';
+        fetchResume();
+      } else {
+        console.error('❌ Failed to save resume:', result.error);
+        alert('Failed to save resume: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error uploading resume:', error);
+      alert('Failed to upload resume. Please try again.');
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
+  const handleDeleteResume = async () => {
+    if (!currentResume) return;
+    
+    if (!window.confirm('Are you sure you want to delete the current resume?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting resume:', currentResume._id);
+      const result = await apiRequest(`resume/${currentResume._id}`, {
+        method: 'DELETE',
+      });
+
+      if (result.success) {
+        console.log('✅ Resume deleted successfully');
+        alert('Resume deleted successfully!');
+        setCurrentResume(null);
+        fetchResume();
+      } else {
+        console.error('❌ Failed to delete resume:', result.error);
+        alert('Failed to delete resume: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting resume:', error);
+      alert('Failed to delete resume. Please try again.');
     }
   };
 
@@ -328,7 +1003,8 @@ const AdminDashboard = () => {
                   { id: 'projects', label: 'Projects', icon: '💼' },
                   { id: 'experience', label: 'Work Experience', icon: '👨‍💻' },
                   { id: 'skills', label: 'Technical Skills', icon: '⚡' },
-                  { id: 'certifications', label: 'Certifications', icon: '🏆' }
+                  { id: 'certifications', label: 'Certifications', icon: '🏆' },
+                  { id: 'resume', label: 'Resume', icon: '📄' }
                 ].map((section) => (
                   <button
                     key={section.id}
@@ -405,14 +1081,35 @@ const AdminDashboard = () => {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-white font-semibold mb-2">Image URL</label>
-                      <input
-                        type="url"
-                        value={newProject.image}
-                        onChange={(e) => setNewProject({...newProject, image: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
-                        placeholder="https://example.com/project-image.jpg"
-                      />
+                      <label className="block text-white font-semibold mb-2">Project Image</label>
+                      <div className="space-y-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
+                        />
+                        {imagePreview && (
+                          <div className="relative">
+                            <img 
+                              src={imagePreview} 
+                              alt="Preview" 
+                              className="w-full max-w-md h-48 object-cover rounded-lg border-2 border-white/20"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setImageFile(null);
+                                setImagePreview(null);
+                              }}
+                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+                        <p className="text-sm text-white/60">Maximum file size: 5MB. Supported formats: JPG, PNG, GIF, WebP</p>
+                      </div>
                     </div>
 
                     <div className="md:col-span-2">
@@ -429,10 +1126,108 @@ const AdminDashboard = () => {
 
                   <button
                     onClick={handleSaveProject}
-                    className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
+                    disabled={uploadingImage}
+                    className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
-                    Add Project
+                    {uploadingImage ? '📸 Uploading Image...' : 'Add Project'}
                   </button>
+
+                  {/* Manage Existing Projects */}
+                  <div className="mt-12 pt-8 border-t border-white/10">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+                        <span>📋</span>
+                        <span>Manage Projects</span>
+                      </h2>
+                      <button
+                        onClick={fetchProjects}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                      >
+                        🔄 Refresh
+                      </button>
+                    </div>
+
+                    {loadingProjects ? (
+                      <div className="text-center py-8">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                        <p className="mt-2 text-white/70">Loading projects...</p>
+                      </div>
+                    ) : projects.length === 0 ? (
+                      <div className="text-center py-8 bg-white/5 rounded-lg">
+                        <p className="text-white/70">No projects found. Add your first project above!</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {projects.map((project) => (
+                          <div
+                            key={project._id}
+                            className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-start gap-4">
+                                  {project.image && (
+                                    <img
+                                      src={`${API_BASE_URL}${project.image}`}
+                                      alt={project.title}
+                                      className="w-20 h-20 object-cover rounded-lg"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="flex-1">
+                                    <h3 className="text-lg font-bold text-white mb-1">{project.title}</h3>
+                                    <p className="text-sm text-white/70 mb-2 line-clamp-2">{project.description}</p>
+                                    {project.technologies && (
+                                      <div className="flex flex-wrap gap-2 mb-2">
+                                        {project.technologies.split(',').map((tech, idx) => (
+                                          <span
+                                            key={idx}
+                                            className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full"
+                                          >
+                                            {tech.trim()}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="flex gap-3 text-xs text-white/50">
+                                      {project.githubUrl && (
+                                        <a
+                                          href={project.githubUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="hover:text-white transition-colors"
+                                        >
+                                          🔗 GitHub
+                                        </a>
+                                      )}
+                                      {project.liveUrl && (
+                                        <a
+                                          href={project.liveUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="hover:text-white transition-colors"
+                                        >
+                                          🌐 Live Demo
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteProject(project._id)}
+                                className="px-4 py-2 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white rounded-lg transition-all duration-300 font-medium"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -441,7 +1236,7 @@ const AdminDashboard = () => {
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
                     <span>👨‍💻</span>
-                    <span>Add Work Experience</span>
+                    <span>{editingExperience ? 'Edit Work Experience' : 'Add Work Experience'}</span>
                   </h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -501,12 +1296,100 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleSaveExperience}
-                    className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
-                  >
-                    Add Experience
-                  </button>
+                  <div className="flex gap-4 mt-6">
+                    <button
+                      onClick={editingExperience ? handleUpdateExperience : handleSaveExperience}
+                      className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
+                    >
+                      {editingExperience ? '✏️ Update Experience' : 'Add Experience'}
+                    </button>
+                    {editingExperience && (
+                      <button
+                        onClick={() => {
+                          setEditingExperience(null);
+                          setNewExperience({
+                            title: '',
+                            company: '',
+                            duration: '',
+                            description: '',
+                            skills: ''
+                          });
+                        }}
+                        className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Manage Existing Experiences */}
+                  <div className="mt-12 pt-8 border-t border-white/10">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+                        <span>📋</span>
+                        <span>Manage Experiences</span>
+                      </h2>
+                      <button
+                        onClick={fetchExperiences}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                      >
+                        🔄 Refresh
+                      </button>
+                    </div>
+
+                    {loadingExperiences ? (
+                      <div className="text-center py-8">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                        <p className="mt-2 text-white/70">Loading experiences...</p>
+                      </div>
+                    ) : experiences.length === 0 ? (
+                      <div className="text-center py-8 bg-white/5 rounded-lg">
+                        <p className="text-white/70">No experiences found. Add your first experience above!</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {experiences.map((experience) => (
+                          <div
+                            key={experience._id}
+                            className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-bold text-white mb-1">{experience.title}</h3>
+                                <p className="text-sm text-purple-300 font-medium mb-1">{experience.company}</p>
+                                {experience.duration && (
+                                  <p className="text-xs text-white/60 mb-2">{experience.duration}</p>
+                                )}
+                                {experience.description && (
+                                  <p className="text-sm text-white/70 mb-2 line-clamp-2">{experience.description}</p>
+                                )}
+                                {experience.skills && (
+                                  <div className="mt-2">
+                                    <span className="text-xs text-white/50">Skills: </span>
+                                    <span className="text-xs text-white/70">{experience.skills}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEditExperience(experience)}
+                                  className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteExperience(experience._id)}
+                                  className="px-3 py-2 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -515,26 +1398,19 @@ const AdminDashboard = () => {
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
                     <span>⚡</span>
-                    <span>Add Technical Skills</span>
+                    <span>{editingSkill ? 'Edit Technical Skill' : 'Add Technical Skills'}</span>
                   </h2>
                   
                   <div className="grid grid-cols-1 gap-6">
                     <div>
                       <label className="block text-white font-semibold mb-2">Category</label>
-                      <select
+                      <input
+                        type="text"
                         value={newSkill.category}
                         onChange={(e) => setNewSkill({...newSkill, category: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                      >
-                        <option value="">Select Category</option>
-                        <option value="Programming Languages">Programming Languages</option>
-                        <option value="JavaScript Libraries">JavaScript Libraries</option>
-                        <option value="Python Libraries">Python Libraries</option>
-                        <option value="Database">Database</option>
-                        <option value="CSS">CSS</option>
-                        <option value="Version Control">Version Control</option>
-                        <option value="Work with">Work with</option>
-                      </select>
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
+                        placeholder="e.g., Programming Languages, Frameworks, etc."
+                      />
                     </div>
 
                     <div>
@@ -549,12 +1425,85 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleSaveSkill}
-                    className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
-                  >
-                    Add Skill
-                  </button>
+                  <div className="flex gap-4 mt-6">
+                    <button
+                      onClick={editingSkill ? handleUpdateSkill : handleSaveSkill}
+                      className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
+                    >
+                      {editingSkill ? '✏️ Update Skill' : 'Add Skill'}
+                    </button>
+                    {editingSkill && (
+                      <button
+                        onClick={() => {
+                          setEditingSkill(null);
+                          setNewSkill({
+                            category: '',
+                            skills: ''
+                          });
+                        }}
+                        className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Manage Existing Skills */}
+                  <div className="mt-12 pt-8 border-t border-white/10">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+                        <span>📋</span>
+                        <span>Manage Skills</span>
+                      </h2>
+                      <button
+                        onClick={fetchSkills}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                      >
+                        🔄 Refresh
+                      </button>
+                    </div>
+
+                    {loadingSkills ? (
+                      <div className="text-center py-8">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                        <p className="mt-2 text-white/70">Loading skills...</p>
+                      </div>
+                    ) : skillsList.length === 0 ? (
+                      <div className="text-center py-8 bg-white/5 rounded-lg">
+                        <p className="text-white/70">No skills found. Add your first skill above!</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {skillsList.map((skill) => (
+                          <div
+                            key={skill._id}
+                            className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-bold text-purple-300 mb-1">{skill.category}</h3>
+                                <p className="text-sm text-white/70">{skill.skills}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEditSkill(skill)}
+                                  className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSkill(skill._id)}
+                                  className="px-3 py-2 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -563,7 +1512,7 @@ const AdminDashboard = () => {
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
                     <span>🏆</span>
-                    <span>Add Certification</span>
+                    <span>{editingCertification ? 'Edit Certification' : 'Add Certification'}</span>
                   </h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -612,6 +1561,38 @@ const AdminDashboard = () => {
                     </div>
 
                     <div className="md:col-span-2">
+                      <label className="block text-white font-semibold mb-2">Certificate Image</label>
+                      <div className="space-y-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCertImageChange}
+                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
+                        />
+                        {certImagePreview && (
+                          <div className="relative">
+                            <img 
+                              src={certImagePreview} 
+                              alt="Certificate Preview" 
+                              className="w-full max-w-md h-48 object-cover rounded-lg border-2 border-white/20"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCertImageFile(null);
+                                setCertImagePreview(null);
+                              }}
+                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+                        <p className="text-sm text-white/60">Maximum file size: 5MB. Supported formats: JPG, PNG, GIF, WebP</p>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
                       <label className="block text-white font-semibold mb-2">Description</label>
                       <textarea
                         value={newCertification.description}
@@ -623,12 +1604,227 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleSaveCertification}
-                    className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
-                  >
-                    Add Certification
-                  </button>
+                  <div className="flex gap-4 mt-6">
+                    <button
+                      onClick={editingCertification ? handleUpdateCertification : handleSaveCertification}
+                      disabled={uploadingCertImage}
+                      className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      {uploadingCertImage ? '📸 Uploading...' : editingCertification ? '✏️ Update Certification' : 'Add Certification'}
+                    </button>
+                    {editingCertification && (
+                      <button
+                        onClick={() => {
+                          setEditingCertification(null);
+                          setNewCertification({
+                            title: '',
+                            issuer: '',
+                            date: '',
+                            credentialUrl: '',
+                            description: ''
+                          });
+                          setCertImageFile(null);
+                          setCertImagePreview(null);
+                        }}
+                        className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Manage Existing Certifications */}
+                  <div className="mt-12 pt-8 border-t border-white/10">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+                        <span>📋</span>
+                        <span>Manage Certifications</span>
+                      </h2>
+                      <button
+                        onClick={fetchCertifications}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                      >
+                        🔄 Refresh
+                      </button>
+                    </div>
+
+                    {loadingCertifications ? (
+                      <div className="text-center py-8">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                        <p className="mt-2 text-white/70">Loading certifications...</p>
+                      </div>
+                    ) : certifications.length === 0 ? (
+                      <div className="text-center py-8 bg-white/5 rounded-lg">
+                        <p className="text-white/70">No certifications found. Add your first certification above!</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {certifications.map((cert) => (
+                          <div
+                            key={cert._id}
+                            className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-start gap-4">
+                                  {cert.image && (
+                                    <img
+                                      src={`${API_BASE_URL}${cert.image}`}
+                                      alt={cert.title}
+                                      className="w-20 h-20 object-cover rounded-lg"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="flex-1">
+                                    <h3 className="text-lg font-bold text-white mb-1">{cert.title}</h3>
+                                    <p className="text-sm text-purple-300 font-medium mb-1">{cert.issuer}</p>
+                                    {cert.date && (
+                                      <p className="text-xs text-white/60 mb-2">{cert.date}</p>
+                                    )}
+                                    {cert.description && (
+                                      <p className="text-sm text-white/70 mb-2 line-clamp-2">{cert.description}</p>
+                                    )}
+                                    {cert.credentialUrl && (
+                                      <a
+                                        href={cert.credentialUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                      >
+                                        🔗 View Credential
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEditCertification(cert)}
+                                  className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteCertification(cert._id)}
+                                  className="px-3 py-2 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Resume Section */}
+              {activeSection === 'resume' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                    <span>📄</span>
+                    <span>Resume Management</span>
+                  </h2>
+
+                  {/* Current Resume Display */}
+                  {loadingResume ? (
+                    <div className="text-center py-8 bg-white/5 rounded-lg mb-6">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                      <p className="mt-2 text-white/70">Loading resume...</p>
+                    </div>
+                  ) : currentResume ? (
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-white mb-2">Current Resume</h3>
+                          <p className="text-white/70 mb-2">📎 {currentResume.fileName}</p>
+                          <p className="text-xs text-white/50">
+                            Uploaded: {new Date(currentResume.uploadedAt).toLocaleDateString()}
+                          </p>
+                          <div className="flex gap-3 mt-4">
+                            <a
+                              href={`${API_BASE_URL}${currentResume.fileUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                            >
+                              👁️ View Resume
+                            </a>
+                            <a
+                              href={`${API_BASE_URL}${currentResume.fileUrl}`}
+                              download
+                              className="px-4 py-2 bg-green-500/20 hover:bg-green-500 text-green-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                            >
+                              ⬇️ Download
+                            </a>
+                            <button
+                              onClick={handleDeleteResume}
+                              className="px-4 py-2 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-white/5 rounded-lg mb-6">
+                      <p className="text-white/70">No resume uploaded yet</p>
+                    </div>
+                  )}
+
+                  {/* Upload New Resume */}
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                    <h3 className="text-xl font-bold text-white mb-4">
+                      {currentResume ? 'Replace Resume' : 'Upload Resume'}
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-white font-semibold mb-2">Select PDF Resume</label>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleResumeFileChange}
+                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
+                        />
+                        <p className="text-sm text-white/60 mt-2">
+                          Maximum file size: 10MB. Only PDF files are allowed.
+                        </p>
+                      </div>
+
+                      {resumeFile && (
+                        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                          <p className="text-green-300 text-sm">
+                            ✅ Selected: {resumeFile.name} ({(resumeFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </p>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleUploadResume}
+                        disabled={!resumeFile || uploadingResume}
+                        className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                      >
+                        {uploadingResume ? '📄 Uploading...' : currentResume ? '🔄 Replace Resume' : '📤 Upload Resume'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Information */}
+                  <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                    <h4 className="text-blue-300 font-semibold mb-2">ℹ️ Information</h4>
+                    <ul className="text-sm text-blue-200/80 space-y-1">
+                      <li>• Only one resume can be active at a time</li>
+                      <li>• Uploading a new resume will replace the current one</li>
+                      <li>• The resume will be available for download on your portfolio</li>
+                      <li>• Supported format: PDF only</li>
+                    </ul>
+                  </div>
                 </div>
               )}
             </div>

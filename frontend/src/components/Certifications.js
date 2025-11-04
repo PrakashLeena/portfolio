@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest, API_BASE_URL } from '../config/api';
 
 const Certifications = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [dynamicCertifications, setDynamicCertifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Certificate handling functions
   const showCopyFeedback = (button, message) => {
@@ -68,24 +71,37 @@ const Certifications = () => {
     }
   };
 
-  const certifications = [
-    {
-      title: 'Fundamentals of Web Development Program at EMC Academy(India)',
-      certificate: 'https://drive.google.com/file/d/1GoM9b0CHoOO_pMztZ0My4VFE7J1sbSFZ/view?usp=drive_link'
-    },
-    {
-      title: 'Full-Stack Web Development course at EMC Academy(India)',
-      certificate: null
-    },
-    {
-      title: 'Prompt Engineering Course at EMC Academy(India)',
-      certificate: 'https://drive.google.com/file/d/1qG4K18seWKbTQSZi0BTcyas5styfCbBU/view?usp=drive_link'
-    },
-    {
-      title: 'Python For Biginners at University Of Moratuwa',
-      certificate: 'https://drive.google.com/file/d/1q8Q7MEPp_Y1A0Mzts2vimWTcSkMfwa7P/view?usp=drive_link'
-    }
-  ];
+  // Fetch certifications from API
+  useEffect(() => {
+    const fetchCertifications = async () => {
+      try {
+        console.log('📋 Fetching certifications...');
+        const result = await apiRequest('certifications');
+        
+        if (result.success && result.data.certifications) {
+          console.log('✅ Certifications fetched:', result.data.certifications);
+          setDynamicCertifications(result.data.certifications);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching certifications:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCertifications();
+  }, []);
+
+  // Map dynamic certifications from database
+  const allCertifications = dynamicCertifications.map((cert) => ({
+    id: cert._id,
+    title: cert.title,
+    issuer: cert.issuer,
+    date: cert.date,
+    description: cert.description,
+    certificate: cert.credentialUrl,
+    image: cert.image ? `${API_BASE_URL}${cert.image}` : null
+  }));
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -149,29 +165,60 @@ const Certifications = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {certifications.map((cert, index) => (
+            {loading ? (
+              <div className="col-span-full text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                <p className="mt-4 text-white/70">Loading certifications...</p>
+              </div>
+            ) : allCertifications.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-white/70">No certifications found</p>
+              </div>
+            ) : (
+              allCertifications.map((cert, index) => (
               <div
-                key={index}
+                key={cert.id || index}
                 className="group relative bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-xl p-8 border border-white/10 hover:border-cyan-500/50 transition-all duration-300 cursor-pointer hover:transform hover:-translate-y-2"
               >
                 <div className="flex items-start space-x-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center">
-                    <img
-                      src="/images/bg.png"
-                      alt="Profile"
-                      className="w-12 h-12 rounded-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                    <span className="text-2xl" style={{display: 'none'}}>👨‍💻</span>
+                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+                    {cert.image ? (
+                      <img
+                        src={cert.image}
+                        alt={cert.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src="/images/bg.png"
+                        alt="Profile"
+                        className="w-12 h-12 rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    )}
+                    <span className="text-2xl" style={{display: cert.image ? 'none' : 'flex'}}>👨‍💻</span>
                   </div>
 
                   <div className="flex-1">
-                    <h2 className="text-lg md:text-xl text-white mb-3 leading-relaxed">
+                    <h2 className="text-lg md:text-xl text-white mb-1 leading-relaxed">
                       {cert.title}
                     </h2>
+                    {cert.issuer && (
+                      <p className="text-sm text-cyan-400 mb-1">{cert.issuer}</p>
+                    )}
+                    {cert.date && (
+                      <p className="text-xs text-white/60 mb-2">{cert.date}</p>
+                    )}
+                    {cert.description && (
+                      <p className="text-sm text-white/70 mb-3">{cert.description}</p>
+                    )}
 
                     {cert.certificate && (
                       <div className="flex flex-col space-y-2">
@@ -200,7 +247,8 @@ const Certifications = () => {
                 {/* Hover Effect Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-cyan-500/0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </div>
       </section>

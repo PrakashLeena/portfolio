@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { apiRequest } from '../config/api';
+import { apiRequest, API_BASE_URL } from '../config/api';
 
 // Contact Form State Hook
 const useContactForm = () => {
@@ -58,6 +58,11 @@ const useContactForm = () => {
 
 const Portfolio = () => {
   const [likes, setLikes] = useState(0);
+  const [experiences, setExperiences] = useState([]);
+  const [loadingExperiences, setLoadingExperiences] = useState(true);
+  const [skills, setSkills] = useState([]);
+  const [loadingSkills, setLoadingSkills] = useState(true);
+  const [resume, setResume] = useState(null);
   const [hasLiked, setHasLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   
@@ -94,6 +99,67 @@ const Portfolio = () => {
     };
     
     loadLikes();
+  }, []);
+
+  // Fetch experiences from API
+  useEffect(() => {
+    const fetchExperiences = async () => {
+      try {
+        console.log('📋 Fetching experiences...');
+        const result = await apiRequest('experiences');
+        
+        if (result.success && result.data.experiences) {
+          console.log('✅ Experiences fetched:', result.data.experiences);
+          setExperiences(result.data.experiences);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching experiences:', error);
+      } finally {
+        setLoadingExperiences(false);
+      }
+    };
+
+    fetchExperiences();
+  }, []);
+
+  // Fetch skills from API
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        console.log('📋 Fetching skills...');
+        const result = await apiRequest('skills');
+        
+        if (result.success && result.data.skills) {
+          console.log('✅ Skills fetched:', result.data.skills);
+          setSkills(result.data.skills);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching skills:', error);
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
+  // Fetch resume
+  useEffect(() => {
+    const fetchResume = async () => {
+      try {
+        console.log('📋 Fetching resume...');
+        const result = await apiRequest('resume');
+        
+        if (result.success && result.data.resume) {
+          console.log('✅ Resume fetched:', result.data.resume);
+          setResume(result.data.resume);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching resume:', error);
+      }
+    };
+
+    fetchResume();
   }, []);
 
   const handleLike = async () => {
@@ -170,7 +236,7 @@ const Portfolio = () => {
       {/* Education Top Banner */}
       <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white py-3 opacity-0 animate-fade-in shadow-lg">
         <div className="container mx-auto text-center px-4">
-          <span className="text-sm font-bold tracking-wide">Undergraduate Student at University of Kelaniya</span><br />
+          <span className="text-sm font-bold tracking-wide">Undergraduate Student at University of Kelaniya (Sri Lanka)</span><br />
           
         </div>
       </div>
@@ -191,66 +257,84 @@ const Portfolio = () => {
             </span>
           </div>
 
-          {/* Centered Main Content - Positioned Higher */}
-          <div className="text-center max-w-4xl mx-auto space-y-8 mt-16">
-            {/* Profile Image */}
-            <div className="w-52 h-52 mx-auto bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-full flex items-center justify-center mb-6 opacity-0 animate-fade-in shadow-2xl" style={{ animationDelay: '0.3s' }}>
-              <div className="w-[11.5rem] h-[11.5rem] bg-gray-900 rounded-full flex items-center justify-center overflow-hidden border-4 border-white/10">
-                <img
-                  src="/images/bg.png"
-                  alt="Prakash Leena Profile"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <span className="text-4xl" style={{ display: 'none' }}>👨‍💻</span>
+          {/* Two Column Layout - Text Left, Image Right */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center max-w-7xl mx-auto mt-16">
+            {/* Left Side - Text Content */}
+            <div className="space-y-8 lg:pl-12">
+              {/* Name and Welcome */}
+              <div className="space-y-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <h1 className="text-3xl md:text-5xl font-extrabold">
+                  <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">Hi, I'm</span>
+                  <br />
+                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">A.G. PRAKASH LEENA</span>
+                </h1>
+                <h2 className="text-xl md:text-2xl font-light text-white/90 tracking-wide">Full-Stack Developer & Tech Enthusiast</h2>
+              </div>
+
+              {/* Description Paragraph */}
+              <div className="space-y-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+                <p className="text-base md:text-lg text-white/90 leading-relaxed font-light">
+                  A highly motivated MIT undergraduate with hands-on experience in{' '}
+                  <span className="text-purple-300 font-semibold">Full-Stack Web Development</span>
+                </p>
+                <p className="text-sm md:text-base text-white/70 font-light">
+                  A quick learner, creative problem solver, and collaborative team player, passionate about building
+                  responsive, user-friendly web applications and delivering smart digital solutions.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-4 opacity-0 animate-fade-in-up pt-4" style={{ animationDelay: '0.7s' }}>
+                <Link to="/projects" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
+                  Projects
+                </Link>
+                <Link to="/articles" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
+                  Articles
+                </Link>
+                <Link to="/certifications" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
+                  Courses
+                </Link>
+                {resume ? (
+                  <a 
+                    href={`${API_BASE_URL}${resume.fileUrl}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase"
+                  >
+                    📄 Resume
+                  </a>
+                ) : (
+                  <a 
+                    href="https://drive.google.com/file/d/1HdJ96BQKgd978MCpza_9ccO8YfxOQ0XG/view?usp=drive_link"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase"
+                  >
+                    Resume
+                  </a>
+                )}
+                <a href="#contact" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
+                  Contact
+                </a>
               </div>
             </div>
 
-            {/* Name and Welcome */}
-            <div className="space-y-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-              <h1 className="text-3xl md:text-4xl font-extrabold">
-                <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">Hi, I'm</span>
-                <br />
-                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">A.G. PRAKASH LEENA</span>
-              </h1>
-              <h2 className="text-lg md:text-2xl font-light text-white/90 tracking-wide">Full-Stack Developer & Tech Enthusiast</h2>
-            </div>
-
-            {/* Description Paragraph */}
-            <div className="space-y-4 max-w-3xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
-              <p className="text-base md:text-xl text-white/90 leading-relaxed font-light">
-                A highly motivated Computer Science undergraduate with hands-on experience in{' '}
-                <span className="text-purple-300 font-semibold">Full-Stack Web Development</span>
-                
-              </p>
-              <p className="text-sm md:text-lg text-white/70 font-light">
-                A quick learner, creative problem solver, and collaborative team player, passionate about building
-                responsive, user-friendly web applications and delivering smart digital solutions.
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap justify-center gap-5 opacity-0 animate-fade-in-up pt-4" style={{ animationDelay: '0.9s' }}>
-              <Link to="/projects" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-10 py-4 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-base tracking-wide uppercase">
-                Projects
-              </Link>
-              <Link to="/articles" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-10 py-4 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-base tracking-wide uppercase">
-                Articles
-              </Link>
-              <Link to="/certifications" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-10 py-4 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-base tracking-wide uppercase">
-                Courses
-              </Link>
-              <a href="https://drive.google.com/file/d/1HdJ96BQKgd978MCpza_9ccO8YfxOQ0XG/view?usp=drive_link"
-                target="_blank" rel="noopener noreferrer"
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-10 py-4 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-base tracking-wide uppercase">
-                Resume
-              </a>
-              <a href="#contact" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-10 py-4 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-base tracking-wide uppercase">
-                Contact
-              </a>
+            {/* Right Side - Profile Image */}
+            <div className="flex justify-center opacity-0 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              <div className="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
+                <div className="w-[15rem] h-[15rem] md:w-[19rem] md:h-[19rem] bg-gray-900 rounded-full flex items-center justify-center overflow-hidden border-4 border-white/10">
+                  <img
+                    src="/images/bg.png"
+                    alt="Prakash Leena Profile"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <span className="text-5xl" style={{ display: 'none' }}>👨‍💻</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -267,40 +351,79 @@ const Portfolio = () => {
                 <div className="w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 h-full flex flex-col shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
-                <div className="flex items-center space-x-5 mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <span className="text-3xl">👨‍💻</span>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-purple-300">Freelancing</h3>
-                    <p className="text-white/80 font-medium">Fiverr</p>
-                    <p className="text-white/60 text-sm">Jan. 2025 – Present</p>
+              {loadingExperiences ? (
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+                    <p className="text-white/70">Loading experiences...</p>
                   </div>
                 </div>
-
-                <ul className="space-y-5 text-white/80 mb-8 flex-grow">
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed">Worked as a freelancer on Fiverr for 5 months, successfully delivering multiple web development projects with on-time delivery and quick response rates, maintaining strong client satisfaction and communication.</span>
-                  </li>
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed">Built responsive, user-friendly websites and applications, focusing on performance, scalability, and clean code.</span>
-                  </li>
-                </ul>
-
-                <div className="space-y-5 mt-auto pt-6 border-t border-white/10">
-                  <div>
-                    <h4 className="text-purple-300 font-bold mb-3 text-lg">Relevant Skills</h4>
-                    <p className="text-white/70 text-sm leading-relaxed">HTML5, CSS3, JavaScript, React.js, Tailwind CSS, Bootstrap, Responsive Web Design, DOM Manipulation, Node.js, Express.js, RESTful API Development, MongoDB, Mongoose, Git & GitHub, VS Code, Postman, Deployment: Netlify, Vercel</p>
+              ) : experiences.length === 0 ? (
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 h-full flex flex-col shadow-2xl">
+                  <div className="flex items-center space-x-5 mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <span className="text-3xl">👨‍💻</span>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-bold text-purple-300">Freelancing</h3>
+                      <p className="text-white/80 font-medium">Fiverr</p>
+                      <p className="text-white/60 text-sm">Jan. 2025 – Present</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-pink-300 font-bold mb-3 text-lg">Soft Skills</h4>
-                    <p className="text-white/70 text-sm leading-relaxed">Quick Learner & Problem Solver, Effective Communication, Time Management, Team Collaboration, Client Handling (Fiverr)</p>
+
+                  <ul className="space-y-5 text-white/80 mb-8 flex-grow">
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed">Worked as a freelancer on Fiverr for 5 months, successfully delivering multiple web development projects with on-time delivery and quick response rates, maintaining strong client satisfaction and communication.</span>
+                    </li>
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed">Built responsive, user-friendly websites and applications, focusing on performance, scalability, and clean code.</span>
+                    </li>
+                  </ul>
+
+                  <div className="space-y-5 mt-auto pt-6 border-t border-white/10">
+                    <div>
+                      <h4 className="text-purple-300 font-bold mb-3 text-lg">Relevant Skills</h4>
+                      <p className="text-white/70 text-sm leading-relaxed">HTML5, CSS3, JavaScript, React.js, Tailwind CSS, Bootstrap, Responsive Web Design, DOM Manipulation, Node.js, Express.js, RESTful API Development, MongoDB, Mongoose, Git & GitHub, VS Code, Postman, Deployment: Netlify, Vercel</p>
+                    </div>
+                    <div>
+                      <h4 className="text-pink-300 font-bold mb-3 text-lg">Soft Skills</h4>
+                      <p className="text-white/70 text-sm leading-relaxed">Quick Learner & Problem Solver, Effective Communication, Time Management, Team Collaboration, Client Handling (Fiverr)</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-6">
+                  {experiences.map((exp, index) => (
+                    <div key={exp._id} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
+                      <div className="flex items-center space-x-5 mb-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                          <span className="text-2xl">👨‍💻</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl md:text-2xl font-bold text-purple-300">{exp.title}</h3>
+                          <p className="text-white/80 font-medium">{exp.company}</p>
+                          {exp.duration && <p className="text-white/60 text-sm">{exp.duration}</p>}
+                        </div>
+                      </div>
+
+                      {exp.description && (
+                        <div className="mb-6">
+                          <p className="text-white/80 leading-relaxed">{exp.description}</p>
+                        </div>
+                      )}
+
+                      {exp.skills && (
+                        <div className="pt-4 border-t border-white/10">
+                          <h4 className="text-purple-300 font-bold mb-2 text-sm">Skills</h4>
+                          <p className="text-white/70 text-sm leading-relaxed">{exp.skills}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Technical Skills */}
@@ -310,48 +433,78 @@ const Portfolio = () => {
                 <div className="w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 h-full flex flex-col shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
-                <div className="flex items-center space-x-5 mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <span className="text-3xl">⚡</span>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-pink-300">Tech Stack</h3>
+              {loadingSkills ? (
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+                    <p className="text-white/70">Loading skills...</p>
                   </div>
                 </div>
+              ) : skills.length === 0 ? (
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 h-full flex flex-col shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
+                  <div className="flex items-center space-x-5 mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <span className="text-3xl">⚡</span>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-bold text-pink-300">Tech Stack</h3>
+                    </div>
+                  </div>
 
-                <ul className="space-y-5 text-white/80 flex-grow">
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed"><strong className="text-purple-300">Programming Languages:</strong> Python, JavaScript, CSS, HTML</span>
-                  </li>
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed"><strong className="text-purple-300">JavaScript Libraries:</strong> Node.js, React.js, Express.js</span>
-                  </li>
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed"><strong className="text-purple-300">Python Libraries:</strong> NumPy, Pandas</span>
-                  </li>
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed"><strong className="text-purple-300">Database:</strong>MongoDB</span>
-                  </li>
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed"><strong className="text-purple-300">CSS:</strong> Tailwind</span>
-                  </li>
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed"><strong className="text-purple-300">Version Control:</strong> Git & GitHub ,Vercel</span>
-                  </li>
-                  <li className="flex items-start space-x-4">
-                    <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
-                    <span className="leading-relaxed"><strong className="text-purple-300">Work with</strong>FireBase , Cloudinary</span>
-                  </li>
-                </ul>
+                  <ul className="space-y-5 text-white/80 flex-grow">
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed"><strong className="text-purple-300">Programming Languages:</strong> Python, JavaScript, CSS, HTML</span>
+                    </li>
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed"><strong className="text-purple-300">JavaScript Libraries:</strong> Node.js, React.js, Express.js</span>
+                    </li>
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed"><strong className="text-purple-300">Python Libraries:</strong> NumPy, Pandas</span>
+                    </li>
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed"><strong className="text-purple-300">Database:</strong>MongoDB</span>
+                    </li>
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed"><strong className="text-purple-300">CSS:</strong> Tailwind</span>
+                    </li>
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed"><strong className="text-purple-300">Version Control:</strong> Git & GitHub ,Vercel</span>
+                    </li>
+                    <li className="flex items-start space-x-4">
+                      <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                      <span className="leading-relaxed"><strong className="text-purple-300">Work with</strong>FireBase , Cloudinary</span>
+                    </li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 h-full flex flex-col shadow-2xl hover:shadow-pink-500/20 transition-all duration-300">
+                  <div className="flex items-center space-x-5 mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <span className="text-3xl">⚡</span>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-bold text-pink-300">Tech Stack</h3>
+                    </div>
+                  </div>
 
-              </div>
+                  <ul className="space-y-5 text-white/80 flex-grow">
+                    {skills.map((skill, index) => (
+                      <li key={skill._id || index} className="flex items-start space-x-4">
+                        <span className="text-purple-400 mt-1 flex-shrink-0 text-lg">▸</span>
+                        <span className="leading-relaxed">
+                          <strong className="text-purple-300">{skill.category}:</strong> {skill.skills}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>

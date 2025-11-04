@@ -1,91 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest, API_BASE_URL } from '../config/api';
 
 const Projects = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [dynamicProjects, setDynamicProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const projects = [
-    {
-      id: 1,
-      title: 'Interactive E-Learning Website (clone)',
-      description: 'Educational platform with interactive animations (frontend)',
-      image: './images/1.png',
-      link: 'https://prakashleena.github.io/project1-udemyclone-restructure/',
-      technologies: ['HTML5', 'CSS']
-    },
-    {
-      id: 2,
-      title: 'Trip Advisor (clone)',
-      description: 'E-commerce website with interactive animations (frontend)',
-      image: '/images/2.png',
-      link: 'https://prakashleena.github.io/project2-tripadvisor/',
-      technologies: ['HTML5', 'Tailwind CSS']
-    },
-    {
-      id: 3,
-      title: 'Greenden (clone)',
-      description: 'E-commerce plants selling website (frontend)',
-      image: '/images/3.png',
-      link: 'https://prakashleena.github.io/Greenden-tailwind-clone/',
-      technologies: ['HTML5', 'Tailwind CSS', 'JavaScript']
-    },
-    {
-      id: 4,
-      title: 'Students Form',
-      description: 'Educational platform for student with updateable UI (frontend)',
-      image: '/images/4.png',
-      link: 'https://prakashleena.github.io/STUDENT-FORM/',
-      technologies: ['HTML5', 'Tailwind CSS', 'JavaScript']
-    },
-    {
-      id: 5,
-      title: 'Nostra (clone)',
-      description: 'E-commerce cloths selling website with interactive animations (frontend)',
-      image: '/images/5.png',
-      link: 'https://prakashleena.github.io/Nostra/',
-      technologies: ['HTML5', 'Tailwind CSS', 'JavaScript']
-    },
-    {
-      id: 6,
-      title: 'Portfolio website',
-      description: 'for customer',
-      image: '/images/6.png',
-      link: '#',
-      technologies: ['HTML5', 'Tailwind CSS', 'JavaScript']
-    },
-    {
-      id: 7,
-      title: 'Apple Website (clone)',
-      description: 'E-commerce Products selling website with interactive animations (frontend)',
-      image: '/images/7.png',
-      link: 'https://apple-website-clone-l84m.vercel.app/',
-      technologies: ['HTML5', 'Tailwind CSS', 'React.js', 'Vite.js']
-    },
-    {
-      id: 8,
-      title: 'Todo List',
-      description: 'a simple todo list application (frontend & backend)',
-      image: '/images/8.png',
-      link: 'https://todo-pi-lemon.vercel.app/',
-      technologies: ['HTML5', 'Tailwind CSS', 'React.js', 'Node.js','Express.js']
-    },
-    {
-      id: 9,
-      title: 'Netflix  (clone)',
-      description: 'Functional Login and Sign up page (frontend & backend)',
-      image: '/images/9.png',
-      link: 'https://loginpage-git-main-a-g-prakash-leenas-projects.vercel.app/',
-      technologies: ['HTML5', 'Tailwind CSS', 'React.js', 'Node.js', 'Express.js']
-    },
-    {
-      id: 10,
-      title: 'Bulk Mail',
-      description: 'Ecommerce platform for sending many mails at a time in simple way   (frontend & backend & database)',
-      image: '/images/10.png',
-      link: 'https://bulk-mail-woad.vercel.app/',
-      technologies: ['HTML5', 'Tailwind CSS', 'React.js', 'Node.js','Express.js','MongoDB(Atles)']
-    }
-  ];
+  // Fetch dynamic projects from API
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        console.log('📋 Fetching projects from API...');
+        const result = await apiRequest('projects');
+        
+        if (result.success && result.data.projects) {
+          console.log('✅ Fetched projects:', result.data.projects);
+          setDynamicProjects(result.data.projects);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Map dynamic projects from database
+  const allProjects = dynamicProjects.map((project) => ({
+    id: project._id,
+    title: project.title,
+    description: project.description,
+    image: project.image ? `${API_BASE_URL}${project.image}` : '/images/default-project.png',
+    link: project.liveUrl || project.githubUrl || '#',
+    technologies: project.technologies ? project.technologies.split(',').map(t => t.trim()) : []
+  }));
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -166,7 +117,17 @@ const Projects = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project, index) => (
+            {loading ? (
+              <div className="col-span-full text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                <p className="mt-4 text-white/70">Loading projects...</p>
+              </div>
+            ) : allProjects.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-white/70">No projects found</p>
+              </div>
+            ) : (
+              allProjects.map((project, index) => (
               <div
                 key={project.id}
                 className="project-card group relative"
@@ -287,7 +248,8 @@ const Projects = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
 
           <style jsx>{`
