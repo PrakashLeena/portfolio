@@ -63,31 +63,22 @@ const Portfolio = () => {
   // Contact form state
   const { formData, isSubmitting, submitStatus, handleChange, handleSubmit } = useContactForm();
 
-  // Load likes from backend and localStorage on component mount
+  // Load likes from backend on component mount
   useEffect(() => {
     const loadLikes = async () => {
       try {
-        // Get current likes from backend
+        // Get current likes and user's like status from backend
         const response = await apiRequest('portfolio/likes', {
           method: 'GET'
         });
         
-        if (response.success) {
+        if (response.success && response.data) {
           setLikes(response.data.likes);
+          // Set hasLiked based on backend response (IP-based tracking)
+          setHasLiked(response.data.hasLiked || false);
         }
       } catch (error) {
         console.error('❌ Error loading likes from backend:', error);
-        // Fallback to localStorage if backend fails
-        const storedLikes = localStorage.getItem('portfolioLikes');
-        if (storedLikes) {
-          setLikes(parseInt(storedLikes));
-        }
-      }
-      
-      // Check if user has already liked (from localStorage)
-      const userHasLiked = localStorage.getItem('userHasLiked');
-      if (userHasLiked === 'true') {
-        setHasLiked(true);
       }
     };
     
@@ -183,14 +174,17 @@ const Portfolio = () => {
         if (response.success && response.data) {
           // Update with actual count from backend
           setLikes(response.data.likes);
-          
-          // Save user's like status to localStorage
-          localStorage.setItem('userHasLiked', 'true');
         } else {
           // Revert optimistic update on failure
           setLikes(likes);
           setHasLiked(false);
-          console.error('❌ Failed to like portfolio:', response);
+          
+          // Show user-friendly message if already liked
+          if (response.error && response.error.includes('already liked')) {
+            console.log('ℹ️ You have already liked this portfolio');
+          } else {
+            console.error('❌ Failed to like portfolio:', response);
+          }
         }
       } catch (error) {
         // Revert optimistic update on error
@@ -215,9 +209,6 @@ const Portfolio = () => {
         if (response.success && response.data) {
           // Update with actual count from backend
           setLikes(response.data.likes);
-          
-          // Update user's like status in localStorage
-          localStorage.setItem('userHasLiked', 'false');
         } else {
           // Revert optimistic update on failure
           setLikes(likes);

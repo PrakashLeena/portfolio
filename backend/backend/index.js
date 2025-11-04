@@ -178,7 +178,12 @@ const Blog = mongoose.model("Blog", blogSchema, "Blogs");
 // Portfolio likes schema
 const portfolioLikesSchema = new mongoose.Schema({
   totalLikes: { type: Number, default: 0 },
-  lastUpdated: { type: Date, default: Date.now }
+  lastUpdated: { type: Date, default: Date.now },
+  likedUsers: [{ 
+    ip: String, 
+    userAgent: String,
+    timestamp: { type: Date, default: Date.now }
+  }]
 });
 
 const PortfolioLikes = mongoose.model("PortfolioLikes", portfolioLikesSchema, "PortfolioLikes");
@@ -1261,25 +1266,35 @@ app.post('/blogs/:id/like', async (req, res) => {
 
 // Portfolio likes endpoints
 
-// Get portfolio likes
+// Helper function to get user IP
+const getUserIP = (req) => {
+  return req.headers['x-forwarded-for']?.split(',')[0] || 
+         req.headers['x-real-ip'] || 
+         req.connection.remoteAddress || 
+         req.socket.remoteAddress || 
+         'unknown';
+};
+
+// Get portfolio likes and check if user has liked
 app.get('/portfolio/likes', async (req, res) => {
   try {
-    console.log('💖 Getting portfolio likes...');
+    const userIP = getUserIP(req);
     
     let portfolioLikes = await PortfolioLikes.findOne();
     
     // If no likes document exists, create one
     if (!portfolioLikes) {
-      portfolioLikes = new PortfolioLikes({ totalLikes: 0 });
+      portfolioLikes = new PortfolioLikes({ totalLikes: 0, likedUsers: [] });
       await portfolioLikes.save();
-      console.log('📊 Created new portfolio likes document');
     }
     
-    console.log(`❤️ Current portfolio likes: ${portfolioLikes.totalLikes}`);
+    // Check if this user has already liked
+    const hasLiked = portfolioLikes.likedUsers.some(user => user.ip === userIP);
     
     res.json({
       success: true,
-      likes: portfolioLikes.totalLikes
+      likes: portfolioLikes.totalLikes,
+      hasLiked: hasLiked
     });
   } catch (error) {
     console.error('❌ Error fetching portfolio likes:', error);
@@ -1293,22 +1308,41 @@ app.get('/portfolio/likes', async (req, res) => {
 // Like portfolio
 app.post('/portfolio/like', async (req, res) => {
   try {
-    console.log('💖 Portfolio like request received');
+    const userIP = getUserIP(req);
+    const userAgent = req.headers['user-agent'] || 'unknown';
     
     let portfolioLikes = await PortfolioLikes.findOne();
     
     // If no likes document exists, create one
     if (!portfolioLikes) {
-      portfolioLikes = new PortfolioLikes({ totalLikes: 1 });
-      await portfolioLikes.save();
-      console.log('📊 Created new portfolio likes document with 1 like');
-    } else {
-      const previousLikes = portfolioLikes.totalLikes;
-      portfolioLikes.totalLikes += 1;
-      portfolioLikes.lastUpdated = new Date();
-      await portfolioLikes.save();
-      console.log(`❤️ Portfolio liked: ${previousLikes} → ${portfolioLikes.totalLikes} likes`);
+      portfolioLikes = new PortfolioLikes({ 
+        totalLikes: 0, 
+        likedUsers: [] 
+      });
     }
+    
+    // Check if user has already liked
+    const hasLiked = portfolioLikes.likedUsers.some(user => user.ip === userIP);
+    
+    if (hasLiked) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already liked this portfolio',
+        likes: portfolioLikes.totalLikes
+      });
+    }
+    
+    // Add like
+    portfolioLikes.totalLikes += 1;
+    portfolioLikes.likedUsers.push({
+      ip: userIP,
+      userAgent: userAgent,
+      timestamp: new Date()
+    });
+    portfolioLikes.lastUpdated = new Date();
+    await portfolioLikes.save();
+    
+    console.log(`❤️ Portfolio liked by ${userIP}: ${portfolioLikes.totalLikes} total likes`);
     
     res.json({
       success: true,
@@ -1327,7 +1361,7 @@ app.post('/portfolio/like', async (req, res) => {
 // Unlike portfolio
 app.post('/portfolio/unlike', async (req, res) => {
   try {
-    console.log('💔 Portfolio unlike request received');
+    const userIP = getUserIP(req);
     
     let portfolioLikes = await PortfolioLikes.findOne();
     
@@ -1338,13 +1372,24 @@ app.post('/portfolio/unlike', async (req, res) => {
       });
     }
     
-    if (portfolioLikes.totalLikes > 0) {
-      const previousLikes = portfolioLikes.totalLikes;
-      portfolioLikes.totalLikes -= 1;
-      portfolioLikes.lastUpdated = new Date();
-      await portfolioLikes.save();
-      console.log(`💔 Portfolio unliked: ${previousLikes} → ${portfolioLikes.totalLikes} likes`);
+    // Check if user has liked
+    const userIndex = portfolioLikes.likedUsers.findIndex(user => user.ip === userIP);
+    
+    if (userIndex === -1) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have not liked this portfolio yet',
+        likes: portfolioLikes.totalLikes
+      });
     }
+    
+    // Remove like
+    portfolioLikes.totalLikes = Math.max(0, portfolioLikes.totalLikes - 1);
+    portfolioLikes.likedUsers.splice(userIndex, 1);
+    portfolioLikes.lastUpdated = new Date();
+    await portfolioLikes.save();
+    
+    console.log(`💔 Portfolio unliked by ${userIP}: ${portfolioLikes.totalLikes} total likes`);
     
     res.json({
       success: true,
