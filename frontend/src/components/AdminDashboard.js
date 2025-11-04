@@ -76,6 +76,13 @@ const AdminDashboard = () => {
   const [resumeFile, setResumeFile] = useState(null);
   const [uploadingResume, setUploadingResume] = useState(false);
 
+  // Profile Photo state
+  const [currentProfilePhoto, setCurrentProfilePhoto] = useState(null);
+  const [loadingProfilePhoto, setLoadingProfilePhoto] = useState(false);
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
+  const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
+
   useEffect(() => {
     // Check if admin is already logged in
     const adminStatus = localStorage.getItem('portfolioAdmin');
@@ -118,6 +125,13 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (isAdmin && activeSection === 'resume') {
       fetchResume();
+    }
+  }, [isAdmin, activeSection]);
+
+  // Fetch profile photo when profile-photo section is active
+  useEffect(() => {
+    if (isAdmin && activeSection === 'profile-photo') {
+      fetchProfilePhoto();
     }
   }, [isAdmin, activeSection]);
 
@@ -908,6 +922,137 @@ const AdminDashboard = () => {
     }
   };
 
+  // Profile Photo functions
+  const fetchProfilePhoto = async () => {
+    setLoadingProfilePhoto(true);
+    try {
+      console.log('📋 Fetching profile photo...');
+      const result = await apiRequest('profile-photo');
+      
+      if (result.success && result.data.profilePhoto) {
+        console.log('✅ Profile photo fetched:', result.data.profilePhoto);
+        setCurrentProfilePhoto(result.data.profilePhoto);
+      } else {
+        setCurrentProfilePhoto(null);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching profile photo:', error);
+      setCurrentProfilePhoto(null);
+    } finally {
+      setLoadingProfilePhoto(false);
+    }
+  };
+
+  const handleProfilePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      
+      setProfilePhotoFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadProfilePhoto = async () => {
+    if (!profilePhotoFile) {
+      alert('Please select a profile photo');
+      return;
+    }
+
+    try {
+      setUploadingProfilePhoto(true);
+      
+      // Upload the image file
+      const formData = new FormData();
+      formData.append('image', profilePhotoFile);
+      
+      console.log('📸 Uploading profile photo...');
+      const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const uploadResult = await uploadResponse.json();
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.message || 'Failed to upload profile photo');
+      }
+      
+      console.log('✅ Profile photo uploaded:', uploadResult.fileUrl);
+      
+      // Save profile photo metadata to database
+      const result = await apiRequest('profile-photo', {
+        method: 'POST',
+        body: JSON.stringify({
+          imageUrl: uploadResult.fileUrl
+        }),
+      });
+
+      if (result.success) {
+        console.log('✅ Profile photo saved successfully');
+        alert('Profile photo uploaded successfully!');
+        setProfilePhotoFile(null);
+        setProfilePhotoPreview(null);
+        // Clear file input
+        const fileInput = document.querySelector('input[type="file"][accept="image/*"]#profile-photo-input');
+        if (fileInput) fileInput.value = '';
+        fetchProfilePhoto();
+      } else {
+        console.error('❌ Failed to save profile photo:', result.error);
+        alert('Failed to save profile photo: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      alert('Failed to upload profile photo. Please try again.');
+    } finally {
+      setUploadingProfilePhoto(false);
+    }
+  };
+
+  const handleDeleteProfilePhoto = async () => {
+    if (!currentProfilePhoto) return;
+    
+    if (!window.confirm('Are you sure you want to delete the current profile photo?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting profile photo:', currentProfilePhoto._id);
+      const result = await apiRequest(`profile-photo/${currentProfilePhoto._id}`, {
+        method: 'DELETE',
+      });
+
+      if (result.success) {
+        console.log('✅ Profile photo deleted successfully');
+        alert('Profile photo deleted successfully!');
+        setCurrentProfilePhoto(null);
+        fetchProfilePhoto();
+      } else {
+        console.error('❌ Failed to delete profile photo:', result.error);
+        alert('Failed to delete profile photo: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting profile photo:', error);
+      alert('Failed to delete profile photo. Please try again.');
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-black flex items-center justify-center p-4">
@@ -1004,7 +1149,8 @@ const AdminDashboard = () => {
                   { id: 'experience', label: 'Work Experience', icon: '👨‍💻' },
                   { id: 'skills', label: 'Technical Skills', icon: '⚡' },
                   { id: 'certifications', label: 'Certifications', icon: '🏆' },
-                  { id: 'resume', label: 'Resume', icon: '📄' }
+                  { id: 'resume', label: 'Resume', icon: '📄' },
+                  { id: 'profile-photo', label: 'Profile Photo', icon: '📸' }
                 ].map((section) => (
                   <button
                     key={section.id}
@@ -1823,6 +1969,131 @@ const AdminDashboard = () => {
                       <li>• Uploading a new resume will replace the current one</li>
                       <li>• The resume will be available for download on your portfolio</li>
                       <li>• Supported format: PDF only</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Profile Photo Section */}
+              {activeSection === 'profile-photo' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                    <span>📸</span>
+                    <span>Profile Photo Management</span>
+                  </h2>
+
+                  {/* Current Profile Photo Display */}
+                  {loadingProfilePhoto ? (
+                    <div className="text-center py-8 bg-white/5 rounded-lg mb-6">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                      <p className="mt-2 text-white/70">Loading profile photo...</p>
+                    </div>
+                  ) : currentProfilePhoto ? (
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
+                      <div className="flex flex-col md:flex-row items-start gap-6">
+                        <div className="flex-shrink-0">
+                          <img
+                            src={`${API_BASE_URL}${currentProfilePhoto.imageUrl}`}
+                            alt="Current Profile"
+                            className="w-48 h-48 rounded-full object-cover border-4 border-purple-500/50"
+                            onError={(e) => {
+                              e.target.src = '/images/bg.png';
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-white mb-2">Current Profile Photo</h3>
+                          <p className="text-xs text-white/50 mb-4">
+                            Uploaded: {new Date(currentProfilePhoto.uploadedAt).toLocaleDateString()}
+                          </p>
+                          <div className="flex gap-3">
+                            <a
+                              href={`${API_BASE_URL}${currentProfilePhoto.imageUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                            >
+                              👁️ View Full Size
+                            </a>
+                            <button
+                              onClick={handleDeleteProfilePhoto}
+                              className="px-4 py-2 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-white/5 rounded-lg mb-6">
+                      <p className="text-white/70">No profile photo uploaded yet</p>
+                    </div>
+                  )}
+
+                  {/* Upload New Profile Photo */}
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                    <h3 className="text-xl font-bold text-white mb-4">
+                      {currentProfilePhoto ? 'Replace Profile Photo' : 'Upload Profile Photo'}
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-white font-semibold mb-2">Select Profile Image</label>
+                        <input
+                          id="profile-photo-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProfilePhotoChange}
+                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
+                        />
+                        <p className="text-sm text-white/60 mt-2">
+                          Maximum file size: 5MB. Supported formats: JPG, PNG, GIF, WebP
+                        </p>
+                      </div>
+
+                      {profilePhotoPreview && (
+                        <div className="flex justify-center">
+                          <div className="relative">
+                            <img
+                              src={profilePhotoPreview}
+                              alt="Preview"
+                              className="w-48 h-48 rounded-full object-cover border-4 border-purple-500/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfilePhotoFile(null);
+                                setProfilePhotoPreview(null);
+                                const fileInput = document.querySelector('#profile-photo-input');
+                                if (fileInput) fileInput.value = '';
+                              }}
+                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleUploadProfilePhoto}
+                        disabled={!profilePhotoFile || uploadingProfilePhoto}
+                        className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                      >
+                        {uploadingProfilePhoto ? '📸 Uploading...' : currentProfilePhoto ? '🔄 Replace Photo' : '📤 Upload Photo'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Information */}
+                  <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                    <h4 className="text-blue-300 font-semibold mb-2">ℹ️ Information</h4>
+                    <ul className="text-sm text-blue-200/80 space-y-1">
+                      <li>• Only one profile photo can be active at a time</li>
+                      <li>• Uploading a new photo will replace the current one</li>
+                      <li>• The photo will be displayed on your portfolio homepage</li>
+                      <li>• Recommended: Square image for best results</li>
                     </ul>
                   </div>
                 </div>

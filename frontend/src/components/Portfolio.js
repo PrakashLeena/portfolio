@@ -23,24 +23,17 @@ const useContactForm = () => {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
-    console.log('🚀 Submitting contact form:', formData);
-
     try {
-      console.log('📡 Sending request to backend via API config...');
       const result = await apiRequest('contact', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
 
-      console.log('📋 API Response:', result);
-
       if (result.success) {
         setSubmitStatus('success');
         setFormData({ name: '', message: '' });
-        console.log('✅ Form submitted successfully!');
       } else {
         setSubmitStatus('error');
-        console.log('❌ Form submission failed:', result.error);
       }
       
       setTimeout(() => setSubmitStatus(null), 5000);
@@ -63,6 +56,7 @@ const Portfolio = () => {
   const [skills, setSkills] = useState([]);
   const [loadingSkills, setLoadingSkills] = useState(true);
   const [resume, setResume] = useState(null);
+  const [profilePhoto, setProfilePhoto] = useState(null);
   const [hasLiked, setHasLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   
@@ -80,7 +74,6 @@ const Portfolio = () => {
         
         if (response.success) {
           setLikes(response.data.likes);
-          console.log(`💖 Loaded ${response.data.likes} likes from backend`);
         }
       } catch (error) {
         console.error('❌ Error loading likes from backend:', error);
@@ -105,11 +98,9 @@ const Portfolio = () => {
   useEffect(() => {
     const fetchExperiences = async () => {
       try {
-        console.log('📋 Fetching experiences...');
         const result = await apiRequest('experiences');
         
         if (result.success && result.data.experiences) {
-          console.log('✅ Experiences fetched:', result.data.experiences);
           setExperiences(result.data.experiences);
         }
       } catch (error) {
@@ -126,11 +117,9 @@ const Portfolio = () => {
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        console.log('📋 Fetching skills...');
         const result = await apiRequest('skills');
         
         if (result.success && result.data.skills) {
-          console.log('✅ Skills fetched:', result.data.skills);
           setSkills(result.data.skills);
         }
       } catch (error) {
@@ -147,11 +136,9 @@ const Portfolio = () => {
   useEffect(() => {
     const fetchResume = async () => {
       try {
-        console.log('📋 Fetching resume...');
         const result = await apiRequest('resume');
         
         if (result.success && result.data.resume) {
-          console.log('✅ Resume fetched:', result.data.resume);
           setResume(result.data.resume);
         }
       } catch (error) {
@@ -160,6 +147,23 @@ const Portfolio = () => {
     };
 
     fetchResume();
+  }, []);
+
+  // Fetch profile photo
+  useEffect(() => {
+    const fetchProfilePhoto = async () => {
+      try {
+        const result = await apiRequest('profile-photo');
+        
+        if (result.success && result.data.profilePhoto) {
+          setProfilePhoto(result.data.profilePhoto);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching profile photo:', error);
+      }
+    };
+
+    fetchProfilePhoto();
   }, []);
 
   const handleLike = async () => {
@@ -176,10 +180,9 @@ const Portfolio = () => {
           method: 'POST'
         });
         
-        if (response.success) {
+        if (response.success && response.data) {
           // Update with actual count from backend
           setLikes(response.data.likes);
-          console.log(`💖 Portfolio liked! Total: ${response.data.likes}`);
           
           // Save user's like status to localStorage
           localStorage.setItem('userHasLiked', 'true');
@@ -187,7 +190,7 @@ const Portfolio = () => {
           // Revert optimistic update on failure
           setLikes(likes);
           setHasLiked(false);
-          console.error('❌ Failed to like portfolio:', response.error);
+          console.error('❌ Failed to like portfolio:', response);
         }
       } catch (error) {
         // Revert optimistic update on error
@@ -209,10 +212,9 @@ const Portfolio = () => {
           method: 'POST'
         });
         
-        if (response.success) {
+        if (response.success && response.data) {
           // Update with actual count from backend
           setLikes(response.data.likes);
-          console.log(`💔 Portfolio unliked! Total: ${response.data.likes}`);
           
           // Update user's like status in localStorage
           localStorage.setItem('userHasLiked', 'false');
@@ -220,7 +222,7 @@ const Portfolio = () => {
           // Revert optimistic update on failure
           setLikes(likes);
           setHasLiked(true);
-          console.error('❌ Failed to unlike portfolio:', response.error);
+          console.error('❌ Failed to unlike portfolio:', response);
         }
       } catch (error) {
         // Revert optimistic update on error
@@ -324,12 +326,12 @@ const Portfolio = () => {
               <div className="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
                 <div className="w-[15rem] h-[15rem] md:w-[19rem] md:h-[19rem] bg-gray-900 rounded-full flex items-center justify-center overflow-hidden border-4 border-white/10">
                   <img
-                    src="/images/bg.png"
+                    src={profilePhoto ? `${API_BASE_URL}${profilePhoto.imageUrl}` : "/images/bg.png"}
                     alt="Prakash Leena Profile"
                     className="w-full h-full object-cover"
+                    loading="lazy"
                     onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
+                      e.target.src = '/images/bg.png';
                     }}
                   />
                   <span className="text-5xl" style={{ display: 'none' }}>👨‍💻</span>

@@ -82,11 +82,8 @@ const uploadResume = multer({
 // Middleware
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log('🌐 CORS Request from origin:', origin);
-    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) {
-      console.log('✅ CORS: Allowing request with no origin');
       return callback(null, true);
     }
     
@@ -121,11 +118,8 @@ const corsOptions = {
     });
     
     if (isAllowed) {
-      console.log('✅ CORS: Allowing origin:', origin);
       callback(null, true);
     } else {
-      console.log('❌ CORS blocked origin:', origin);
-      console.log('📋 Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -245,6 +239,15 @@ const resumeSchema = new mongoose.Schema({
 });
 
 const Resume = mongoose.model("Resume", resumeSchema, "Resumes");
+
+// Profile Photo schema
+const profilePhotoSchema = new mongoose.Schema({
+  imageUrl: { type: String, required: true },
+  uploadedAt: { type: Date, default: Date.now },
+  isActive: { type: Boolean, default: true }
+});
+
+const ProfilePhoto = mongoose.model("ProfilePhoto", profilePhotoSchema, "ProfilePhotos");
 
 // Root endpoint for Railway health checks
 app.get('/', (req, res) => {
@@ -371,9 +374,7 @@ app.post('/upload-resume', uploadResume.single('resume'), (req, res) => {
 // GET all projects
 app.get('/projects', async (req, res) => {
   try {
-    console.log('📋 Fetching all projects...');
     const projects = await Project.find().sort({ createdAt: -1 });
-    console.log(`✅ Retrieved ${projects.length} projects`);
     
     res.json({
       success: true,
@@ -470,9 +471,7 @@ app.delete('/projects/:id', async (req, res) => {
 // GET all experiences
 app.get('/experiences', async (req, res) => {
   try {
-    console.log('📋 Fetching all experiences...');
     const experiences = await Experience.find().sort({ createdAt: -1 });
-    console.log(`✅ Retrieved ${experiences.length} experiences`);
     
     res.json({
       success: true,
@@ -596,9 +595,7 @@ app.delete('/experiences/:id', async (req, res) => {
 // GET all skills
 app.get('/skills', async (req, res) => {
   try {
-    console.log('📋 Fetching all skills...');
     const skills = await Skill.find().sort({ createdAt: -1 });
-    console.log(`✅ Retrieved ${skills.length} skill categories`);
     
     res.json({
       success: true,
@@ -719,9 +716,7 @@ app.delete('/skills/:id', async (req, res) => {
 // GET all certifications
 app.get('/certifications', async (req, res) => {
   try {
-    console.log('📋 Fetching all certifications...');
     const certifications = await Certification.find().sort({ createdAt: -1 });
-    console.log(`✅ Retrieved ${certifications.length} certifications`);
     
     res.json({
       success: true,
@@ -897,7 +892,6 @@ app.post('/resume', async (req, res) => {
 // Get active resume
 app.get('/resume', async (req, res) => {
   try {
-    console.log('📋 Fetching active resume...');
     const resume = await Resume.findOne({ isActive: true }).sort({ uploadedAt: -1 });
     
     if (!resume) {
@@ -965,6 +959,118 @@ app.delete('/resume/:id', async (req, res) => {
   }
 });
 
+// Profile Photo endpoints
+// Upload profile photo
+app.post('/profile-photo', async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'imageUrl is required'
+      });
+    }
+    
+    console.log('📸 Uploading profile photo:', imageUrl);
+    
+    // Deactivate all previous profile photos
+    await ProfilePhoto.updateMany({}, { isActive: false });
+    
+    // Create new profile photo entry
+    const newProfilePhoto = new ProfilePhoto({
+      imageUrl,
+      isActive: true
+    });
+    
+    await newProfilePhoto.save();
+    console.log('✅ Profile photo saved to database:', newProfilePhoto._id);
+    
+    res.json({
+      success: true,
+      message: 'Profile photo uploaded successfully',
+      profilePhoto: newProfilePhoto
+    });
+  } catch (error) {
+    console.error('❌ Error uploading profile photo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload profile photo',
+      error: error.message
+    });
+  }
+});
+
+// Get active profile photo
+app.get('/profile-photo', async (req, res) => {
+  try {
+    const profilePhoto = await ProfilePhoto.findOne({ isActive: true }).sort({ uploadedAt: -1 });
+    
+    if (!profilePhoto) {
+      return res.json({
+        success: true,
+        profilePhoto: null
+      });
+    }
+    
+    console.log('✅ Active profile photo found');
+    
+    res.json({
+      success: true,
+      profilePhoto: profilePhoto
+    });
+  } catch (error) {
+    console.error('❌ Error fetching profile photo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch profile photo',
+      error: error.message
+    });
+  }
+});
+
+// Delete profile photo
+app.delete('/profile-photo/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🗑️ Deleting profile photo:', id);
+    
+    const deletedPhoto = await ProfilePhoto.findByIdAndDelete(id);
+    
+    if (!deletedPhoto) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile photo not found'
+      });
+    }
+    
+    // Delete associated image file if it exists
+    if (deletedPhoto.imageUrl && deletedPhoto.imageUrl.startsWith('/uploads/')) {
+      const imagePath = path.join(__dirname, deletedPhoto.imageUrl);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+        console.log('🗑️ Deleted image file:', imagePath);
+      }
+    }
+    
+    console.log('✅ Profile photo deleted successfully:', id);
+    
+    res.json({
+      success: true,
+      message: 'Profile photo deleted successfully',
+      profilePhoto: deletedPhoto
+    });
+  } catch (error) {
+    console.error('❌ Error deleting profile photo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete profile photo',
+      error: error.message
+    });
+  }
+});
+
 // Blog endpoints
 
 // Get all blogs
@@ -974,7 +1080,6 @@ app.get('/blogs', async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
     
-    console.log(`📚 Retrieved ${blogs.length} blogs`);
     res.json({
       success: true,
       blogs: blogs
