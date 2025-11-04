@@ -148,8 +148,8 @@ app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
   
   // Simple admin credentials (you can change these)
-  const ADMIN_USERNAME = 'admin';
-  const ADMIN_PASSWORD = 'portfolio2024';
+  const ADMIN_USERNAME = 'kibo';
+  const ADMIN_PASSWORD = '123456';
   
   console.log(`🔐 Admin login attempt: ${username}`);
   
