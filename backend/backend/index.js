@@ -318,67 +318,119 @@ app.post('/admin/login', (req, res) => {
   }
 });
 
-// File upload endpoint
-app.post('/upload', upload.single('image'), (req, res) => {
-  try {
-    if (!req.file) {
+// File upload endpoint with error handling
+app.post('/upload', (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      console.error('❌ Multer error:', err);
+      
+      // Handle multer-specific errors
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            success: false,
+            message: 'File size too large. Maximum size is 5MB.'
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: `Upload error: ${err.message}`
+        });
+      }
+      
+      // Handle custom errors (like file type validation)
       return res.status(400).json({
         success: false,
-        message: 'No file uploaded'
+        message: err.message || 'Error uploading file'
       });
     }
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded'
+        });
+      }
 
-    // Return the file path that can be used to access the image
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
-    console.log('📸 Image uploaded successfully:', req.file.filename);
-    
-    res.json({
-      success: true,
-      message: 'File uploaded successfully',
-      fileUrl: fileUrl,
-      filename: req.file.filename
-    });
-  } catch (error) {
-    console.error('❌ Error uploading file:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error uploading file',
-      error: error.message
-    });
-  }
+      // Return the file path that can be used to access the image
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      console.log('📸 Image uploaded successfully:', req.file.filename);
+      
+      res.json({
+        success: true,
+        message: 'File uploaded successfully',
+        fileUrl: fileUrl,
+        filename: req.file.filename
+      });
+    } catch (error) {
+      console.error('❌ Error uploading file:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error uploading file',
+        error: error.message
+      });
+    }
+  });
 });
 
-// Resume file upload endpoint
-app.post('/upload-resume', uploadResume.single('resume'), (req, res) => {
-  try {
-    if (!req.file) {
+// Resume file upload endpoint with error handling
+app.post('/upload-resume', (req, res) => {
+  uploadResume.single('resume')(req, res, (err) => {
+    if (err) {
+      console.error('❌ Multer error (resume):', err);
+      
+      // Handle multer-specific errors
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            success: false,
+            message: 'Resume file size too large. Maximum size is 10MB.'
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: `Upload error: ${err.message}`
+        });
+      }
+      
+      // Handle custom errors (like file type validation)
       return res.status(400).json({
         success: false,
-        message: 'No resume file uploaded'
+        message: err.message || 'Error uploading resume'
       });
     }
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No resume file uploaded'
+        });
+      }
 
-    // Return the file path that can be used to access the resume
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
-    console.log('📄 Resume uploaded successfully:', req.file.filename);
-    
-    res.json({
-      success: true,
-      message: 'Resume uploaded successfully',
-      fileUrl: fileUrl,
-      filename: req.file.filename,
-      originalName: req.file.originalname
-    });
-  } catch (error) {
-    console.error('❌ Error uploading resume:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to upload resume',
-      error: error.message
-    });
-  }
+      // Return the file path that can be used to access the resume
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      console.log('📄 Resume uploaded successfully:', req.file.filename);
+      
+      res.json({
+        success: true,
+        message: 'Resume uploaded successfully',
+        fileUrl: fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname
+      });
+    } catch (error) {
+      console.error('❌ Error uploading resume:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload resume',
+        error: error.message
+      });
+    }
+  });
 });
 
 // Admin Dashboard Endpoints

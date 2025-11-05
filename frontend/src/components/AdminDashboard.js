@@ -227,21 +227,30 @@ const AdminDashboard = () => {
         formData.append('image', imageFile);
         
         console.log('📸 Uploading image...');
-        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
-          method: 'POST',
-          body: formData,
-        });
         
-        const uploadResult = await uploadResponse.json();
-        
-        if (uploadResult.success) {
-          imageUrl = uploadResult.fileUrl;
-          console.log('✅ Image uploaded:', imageUrl);
-        } else {
-          throw new Error('Failed to upload image');
+        try {
+          const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+          
+          const uploadResult = await uploadResponse.json();
+          
+          if (uploadResult.success) {
+            imageUrl = uploadResult.fileUrl;
+            console.log('✅ Image uploaded:', imageUrl);
+          } else {
+            setUploadingImage(false);
+            throw new Error(uploadResult.message || 'Failed to upload image');
+          }
+          
+          setUploadingImage(false);
+        } catch (uploadError) {
+          setUploadingImage(false);
+          console.error('❌ Image upload error:', uploadError);
+          alert('Failed to upload image: ' + uploadError.message);
+          return; // Stop here if image upload fails
         }
-        
-        setUploadingImage(false);
       }
       
       console.log('💼 Adding new project:', newProject.title);
@@ -279,7 +288,6 @@ const AdminDashboard = () => {
       console.error('❌ Error saving project:', error);
       console.error('Error details:', error.message, error.stack);
       alert('Failed to save project: ' + error.message);
-      setUploadingImage(false);
     }
   };
 
