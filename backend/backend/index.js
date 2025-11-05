@@ -1583,14 +1583,21 @@ app.post("/contact", async (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 // Start the server (Railway, local development, or other hosting)
-// Only skip if explicitly in a serverless environment like Netlify
-if (!process.env.NETLIFY && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+// Skip app.listen() for serverless environments (Vercel, Netlify, AWS Lambda)
+const isServerless = process.env.VERCEL || 
+                     process.env.NETLIFY || 
+                     process.env.AWS_LAMBDA_FUNCTION_NAME ||
+                     process.env.LAMBDA_TASK_ROOT;
+
+if (!isServerless) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📧 Contact endpoint: /contact`);
     console.log(`📮 Bulk mail endpoint: /sendmail`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
+} else {
+  console.log('🔧 Running in serverless mode');
 }
 
 // Export the app for serverless deployment
