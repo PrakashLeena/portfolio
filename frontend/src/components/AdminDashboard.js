@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { apiRequest, API_BASE_URL } from '../config/api';
+import { apiRequest, API_BASE_URL, createApiUrl } from '../config/api';
 
 const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -229,7 +229,7 @@ const AdminDashboard = () => {
         console.log('📸 Uploading image...');
         
         try {
-          const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+          const uploadResponse = await fetch(createApiUrl('upload'), {
             method: 'POST',
             body: formData,
           });
@@ -686,7 +686,7 @@ const AdminDashboard = () => {
         formData.append('image', certImageFile);
         
         console.log('📸 Uploading certificate image...');
-        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+        const uploadResponse = await fetch(createApiUrl('upload'), {
           method: 'POST',
           body: formData,
         });
@@ -755,7 +755,7 @@ const AdminDashboard = () => {
         formData.append('image', certImageFile);
         
         console.log('📸 Uploading certificate image...');
-        const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+        const uploadResponse = await fetch(createApiUrl('upload'), {
           method: 'POST',
           body: formData,
         });
@@ -860,7 +860,7 @@ const AdminDashboard = () => {
       formData.append('resume', resumeFile);
       
       console.log('📄 Uploading resume file...');
-      const uploadResponse = await fetch(`${API_BASE_URL}/upload-resume`, {
+      const uploadResponse = await fetch(createApiUrl('upload-resume'), {
         method: 'POST',
         body: formData,
       });
@@ -991,7 +991,7 @@ const AdminDashboard = () => {
       formData.append('image', profilePhotoFile);
       
       console.log('📸 Uploading profile photo...');
-      const uploadResponse = await fetch(`${API_BASE_URL}/upload`, {
+      const uploadResponse = await fetch(createApiUrl('upload'), {
         method: 'POST',
         body: formData,
       });
