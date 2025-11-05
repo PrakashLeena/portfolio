@@ -11,10 +11,18 @@ require('dotenv').config();
 const app = express();
 
 // Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('📁 Created uploads directory');
+// Use /tmp for serverless environments (Vercel, Lambda)
+const isServerlessEnv = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+const uploadsDir = isServerlessEnv ? '/tmp/uploads' : path.join(__dirname, 'uploads');
+
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('📁 Created uploads directory:', uploadsDir);
+  }
+} catch (error) {
+  console.warn('⚠️ Could not create uploads directory:', error.message);
+  console.warn('⚠️ File uploads may not work in this environment');
 }
 
 // Configure multer for file uploads

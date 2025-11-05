@@ -1,0 +1,13 @@
+node_modules
+.env
+.git
+*.log
+uploads
+scripts
+.dockerignore
+Dockerfile
+railway.json
+nixpacks.toml
+build.sh
+start.sh
+RAILWAY_DEPLOYMENT.md
