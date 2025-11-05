@@ -41,6 +41,7 @@ const Contact = () => {
         method: 'POST',
         body: JSON.stringify({
           name: formData.name,
+          email: formData.email,
           message: formData.message
         }),
       });

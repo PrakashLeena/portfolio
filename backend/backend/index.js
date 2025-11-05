@@ -154,6 +154,7 @@ const Credential = mongoose.model("Credential", credentialSchema, "BulkMail");
 // Contact form schema
 const contactSchema = new mongoose.Schema({
   name: String,
+  email: String,
   message: String,
   timestamp: { type: Date, default: Date.now }
 });
@@ -1448,9 +1449,9 @@ app.post("/sendmail", async (req, res) => {
 
 // Contact form endpoint
 app.post("/contact", async (req, res) => {
-  const { name, message } = req.body;
+  const { name, email, message } = req.body;
 
-  console.log('📧 Contact form submission received:', { name, message: message.substring(0, 50) + '...' });
+  console.log('📧 Contact form submission received:', { name, email, message: message.substring(0, 50) + '...' });
 
   if (!name || !message) {
     return res.status(400).json({ 
@@ -1464,6 +1465,7 @@ app.post("/contact", async (req, res) => {
     if (mongoose.connection.readyState === 1) {
       const contactMessage = new Contact({
         name,
+        email,
         message
       });
       await contactMessage.save();
@@ -1537,6 +1539,7 @@ app.post("/contact", async (req, res) => {
           
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p><strong style="color: #333;">Name:</strong> ${name}</p>
+            <p><strong style="color: #333;">Email:</strong> ${email || 'Not provided'}</p>
             <p><strong style="color: #333;">Timestamp:</strong> ${new Date().toLocaleString()}</p>
           </div>
           
