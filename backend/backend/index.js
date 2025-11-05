@@ -4,38 +4,14 @@ const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const cloudinary = require("./config/cloudinary");
 const connectDB = require("./config/database");
 require('dotenv').config();
 
 const app = express();
 
-// Create uploads directory if it doesn't exist
-// Use /tmp for serverless environments (Vercel, Lambda)
-const isServerlessEnv = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
-const uploadsDir = isServerlessEnv ? '/tmp/uploads' : path.join(__dirname, 'uploads');
-
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    console.log('📁 Created uploads directory:', uploadsDir);
-  }
-} catch (error) {
-  console.warn('⚠️ Could not create uploads directory:', error.message);
-  console.warn('⚠️ File uploads may not work in this environment');
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    // Create unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'project-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer to use memory storage for Cloudinary uploads
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -57,19 +33,8 @@ const upload = multer({
 });
 
 // Configure multer for PDF resume uploads
-const resumeStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    // Create unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'resume-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
 const uploadResume = multer({
-  storage: resumeStorage,
+  storage: storage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit for PDFs
   },
@@ -140,10 +105,6 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(uploadsDir));
-console.log('📂 Serving uploads from:', uploadsDir);
-
 // Connect to MongoDB Atlas (with error handling)
 connectDB().catch(err => {
   console.log('⚠️  MongoDB connection failed, running without database');
@@ -204,6 +165,7 @@ const projectSchema = new mongoose.Schema({
   githubUrl: String,
   liveUrl: String,
   image: String,
+  imagePublicId: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -238,6 +200,7 @@ const certificationSchema = new mongoose.Schema({
   credentialUrl: String,
   description: String,
   image: String,
+  imagePublicId: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -247,6 +210,7 @@ const Certification = mongoose.model("Certification", certificationSchema, "Cert
 const resumeSchema = new mongoose.Schema({
   fileName: { type: String, required: true },
   fileUrl: { type: String, required: true },
+  publicId: String,
   uploadedAt: { type: Date, default: Date.now },
   isActive: { type: Boolean, default: true }
 });
@@ -256,6 +220,7 @@ const Resume = mongoose.model("Resume", resumeSchema, "Resumes");
 // Profile Photo schema
 const profilePhotoSchema = new mongoose.Schema({
   imageUrl: { type: String, required: true },
+  publicId: String,
   uploadedAt: { type: Date, default: Date.now },
   isActive: { type: Boolean, default: true }
 });
@@ -318,9 +283,9 @@ app.post('/admin/login', (req, res) => {
   }
 });
 
-// File upload endpoint with error handling
+// File upload endpoint with Cloudinary
 app.post('/upload', (req, res) => {
-  upload.single('image')(req, res, (err) => {
+  upload.single('image')(req, res, async (err) => {
     if (err) {
       console.error('❌ Multer error:', err);
       
@@ -353,31 +318,54 @@ app.post('/upload', (req, res) => {
         });
       }
 
-      // Return the file path that can be used to access the image
-      const fileUrl = `/uploads/${req.file.filename}`;
+      console.log('📸 Uploading image to Cloudinary...');
       
-      console.log('📸 Image uploaded successfully:', req.file.filename);
+      // Upload to Cloudinary using upload_stream
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'portfolio/projects',
+            resource_type: 'image',
+            transformation: [
+              { width: 1200, height: 800, crop: 'limit' },
+              { quality: 'auto' }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        
+        // Pipe the buffer to Cloudinary
+        uploadStream.end(req.file.buffer);
+      });
+      
+      const result = await uploadPromise;
+      
+      console.log('✅ Image uploaded to Cloudinary:', result.secure_url);
       
       res.json({
         success: true,
         message: 'File uploaded successfully',
-        fileUrl: fileUrl,
-        filename: req.file.filename
+        fileUrl: result.secure_url,
+        publicId: result.public_id,
+        filename: req.file.originalname
       });
     } catch (error) {
-      console.error('❌ Error uploading file:', error);
+      console.error('❌ Error uploading to Cloudinary:', error);
       res.status(500).json({
         success: false,
-        message: 'Error uploading file',
+        message: 'Error uploading file to Cloudinary',
         error: error.message
       });
     }
   });
 });
 
-// Resume file upload endpoint with error handling
+// Resume file upload endpoint with Cloudinary
 app.post('/upload-resume', (req, res) => {
-  uploadResume.single('resume')(req, res, (err) => {
+  uploadResume.single('resume')(req, res, async (err) => {
     if (err) {
       console.error('❌ Multer error (resume):', err);
       
@@ -410,23 +398,42 @@ app.post('/upload-resume', (req, res) => {
         });
       }
 
-      // Return the file path that can be used to access the resume
-      const fileUrl = `/uploads/${req.file.filename}`;
+      console.log('📄 Uploading resume to Cloudinary...');
       
-      console.log('📄 Resume uploaded successfully:', req.file.filename);
+      // Upload PDF to Cloudinary
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'portfolio/resumes',
+            resource_type: 'raw', // For PDFs
+            format: 'pdf'
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        
+        uploadStream.end(req.file.buffer);
+      });
+      
+      const result = await uploadPromise;
+      
+      console.log('✅ Resume uploaded to Cloudinary:', result.secure_url);
       
       res.json({
         success: true,
         message: 'Resume uploaded successfully',
-        fileUrl: fileUrl,
-        filename: req.file.filename,
+        fileUrl: result.secure_url,
+        publicId: result.public_id,
+        filename: req.file.originalname,
         originalName: req.file.originalname
       });
     } catch (error) {
-      console.error('❌ Error uploading resume:', error);
+      console.error('❌ Error uploading resume to Cloudinary:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to upload resume',
+        message: 'Failed to upload resume to Cloudinary',
         error: error.message
       });
     }
@@ -506,12 +513,13 @@ app.delete('/projects/:id', async (req, res) => {
       });
     }
     
-    // Delete associated image file if it exists
-    if (deletedProject.image && deletedProject.image.startsWith('/uploads/')) {
-      const imagePath = path.join(__dirname, deletedProject.image);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-        console.log('🗑️ Deleted image file:', imagePath);
+    // Delete associated image from Cloudinary if it exists
+    if (deletedProject.imagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(deletedProject.imagePublicId);
+        console.log('🗑️ Deleted image from Cloudinary:', deletedProject.imagePublicId);
+      } catch (cloudinaryError) {
+        console.warn('⚠️ Could not delete image from Cloudinary:', cloudinaryError.message);
       }
     }
     

@@ -219,6 +219,7 @@ const AdminDashboard = () => {
 
     try {
       let imageUrl = '';
+      let imagePublicId = '';
       
       // Upload image if selected
       if (imageFile) {
@@ -238,6 +239,7 @@ const AdminDashboard = () => {
           
           if (uploadResult.success) {
             imageUrl = uploadResult.fileUrl;
+            imagePublicId = uploadResult.publicId;
             console.log('✅ Image uploaded:', imageUrl);
           } else {
             setUploadingImage(false);
@@ -256,7 +258,8 @@ const AdminDashboard = () => {
       console.log('💼 Adding new project:', newProject.title);
       const projectData = {
         ...newProject,
-        image: imageUrl
+        image: imageUrl,
+        imagePublicId: imagePublicId
       };
       
       const result = await apiRequest('projects', {
