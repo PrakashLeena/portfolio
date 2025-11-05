@@ -29,14 +29,21 @@ const Projects = () => {
   }, []);
 
   // Map dynamic projects from database
-  const allProjects = dynamicProjects.map((project) => ({
-    id: project._id,
-    title: project.title,
-    description: project.description,
-    image: project.image ? `${API_BASE_URL}${project.image}` : '/images/default-project.png',
-    link: project.liveUrl || project.githubUrl || '#',
-    technologies: project.technologies ? project.technologies.split(',').map(t => t.trim()) : []
-  }));
+  const allProjects = dynamicProjects.map((project) => {
+    // Check if image is a full URL (Cloudinary) or relative path (local)
+    const imageUrl = project.image 
+      ? (project.image.startsWith('http') ? project.image : `${API_BASE_URL}${project.image}`)
+      : '/images/default-project.png';
+    
+    return {
+      id: project._id,
+      title: project.title,
+      description: project.description,
+      image: imageUrl,
+      link: project.liveUrl || project.githubUrl || '#',
+      technologies: project.technologies ? project.technologies.split(',').map(t => t.trim()) : []
+    };
+  });
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
