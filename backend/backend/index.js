@@ -91,20 +91,19 @@ const corsOptions = {
       'http://localhost:3000', 
       'http://127.0.0.1:3000', 
       'http://localhost:3001',
-      /\.vercel\.app$/, // Allow all Vercel deployments
-      /\.netlify\.app$/, // Allow Netlify deployments
-      /\.railway\.app$/, // Allow Railway deployments
-      /\.up\.railway\.app$/, // Allow Railway custom domains
-      /^https?:\/\/localhost(:\d+)?$/, // Allow any localhost port
-      // Add specific Vercel domains
+      // Add specific production domains
+      'https://kiboxson.vercel.app',
+      'https://portfolio-5ixb.vercel.app',
       'https://portfolio-git-main-prakashleenas-projects.vercel.app',
       'https://newportfolio-prakashleenas-projects.vercel.app',
       'https://newportfolio-git-main-prakashleenas-projects.vercel.app',
       'https://newportfolio-prakashleenas-projects.vercel.app',
-      // Allow any subdomain of prakashleenas-projects.vercel.app
-      /https:\/\/.*-prakashleenas-projects\.vercel\.app$/,
-      // Allow any vercel.app domain (temporary for debugging)
-      /^https:\/\/.*\.vercel\.app$/,
+      // Allow all Vercel, Netlify, and Railway deployments
+      /^https:\/\/[\w-]+\.vercel\.app$/, // Allow all Vercel deployments
+      /^https:\/\/[\w-]+\.netlify\.app$/, // Allow Netlify deployments
+      /^https:\/\/[\w-]+\.railway\.app$/, // Allow Railway deployments
+      /^https:\/\/[\w-]+\.up\.railway\.app$/, // Allow Railway custom domains
+      /^https?:\/\/localhost(:\d+)?$/, // Allow any localhost port
     ];
     
     // Check if origin matches any allowed pattern
