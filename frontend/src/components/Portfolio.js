@@ -128,9 +128,14 @@ const Portfolio = () => {
     const fetchResume = async () => {
       try {
         const result = await apiRequest('resume');
+        console.log('📄 Resume API response:', result);
         
         if (result.success && result.data.resume) {
+          console.log('✅ Resume data:', result.data.resume);
+          console.log('📎 Resume URL:', result.data.resume.fileUrl);
           setResume(result.data.resume);
+        } else {
+          console.log('⚠️ No resume found in response');
         }
       } catch (error) {
         console.error('❌ Error fetching resume:', error);
@@ -292,6 +297,7 @@ const Portfolio = () => {
                     href={resume.fileUrl}
                     target="_blank" 
                     rel="noopener noreferrer"
+                    onClick={() => console.log('🔗 Opening resume URL:', resume.fileUrl)}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase"
                   >
                     📄 Resume

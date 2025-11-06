@@ -968,17 +968,23 @@ app.get('/resume', async (req, res) => {
     const resume = await Resume.findOne({ isActive: true }).sort({ uploadedAt: -1 });
     
     if (!resume) {
+      console.log('⚠️ No active resume found in database');
       return res.json({
         success: true,
-        resume: null
+        data: {
+          resume: null
+        }
       });
     }
     
     console.log('✅ Active resume found:', resume.fileName);
+    console.log('📎 Resume URL:', resume.fileUrl);
     
     res.json({
       success: true,
-      resume: resume
+      data: {
+        resume: resume
+      }
     });
   } catch (error) {
     console.error('❌ Error fetching resume:', error);
@@ -1080,17 +1086,23 @@ app.get('/profile-photo', async (req, res) => {
     const profilePhoto = await ProfilePhoto.findOne({ isActive: true }).sort({ uploadedAt: -1 });
     
     if (!profilePhoto) {
+      console.log('⚠️ No active profile photo found in database');
       return res.json({
         success: true,
-        profilePhoto: null
+        data: {
+          profilePhoto: null
+        }
       });
     }
     
     console.log('✅ Active profile photo found');
+    console.log('📸 Profile photo URL:', profilePhoto.imageUrl);
     
     res.json({
       success: true,
-      profilePhoto: profilePhoto
+      data: {
+        profilePhoto: profilePhoto
+      }
     });
   } catch (error) {
     console.error('❌ Error fetching profile photo:', error);
