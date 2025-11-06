@@ -289,7 +289,7 @@ const Portfolio = () => {
                 </Link>
                 {resume ? (
                   <a 
-                    href={`${API_BASE_URL}${resume.fileUrl}`}
+                    href={resume.fileUrl}
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase"
@@ -317,7 +317,7 @@ const Portfolio = () => {
               <div className="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
                 <div className="w-[15rem] h-[15rem] md:w-[19rem] md:h-[19rem] bg-gray-900 rounded-full flex items-center justify-center overflow-hidden border-4 border-white/10">
                   <img
-                    src={profilePhoto ? `${API_BASE_URL}${profilePhoto.imageUrl}` : "/images/bg.png"}
+                    src={profilePhoto ? profilePhoto.imageUrl : "/images/bg.png"}
                     alt="Prakash Leena Profile"
                     className="w-full h-full object-cover"
                     loading="lazy"

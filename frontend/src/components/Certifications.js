@@ -100,7 +100,7 @@ const Certifications = () => {
     date: cert.date,
     description: cert.description,
     certificate: cert.credentialUrl,
-    image: cert.image ? `${API_BASE_URL}${cert.image}` : null
+    image: cert.image ? (cert.image.startsWith('http') ? cert.image : `${API_BASE_URL}${cert.image}`) : null
   }));
 
   const toggleMobileMenu = () => {
