@@ -264,7 +264,7 @@ const Portfolio = () => {
                 <h1 className="text-3xl md:text-5xl font-extrabold">
                   <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">Hi, I'm</span>
                   <br />
-                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">A.G. PRAKASH LEENA</span>
+                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">A.G. PRAKASH LENAI</span>
                 </h1>
                 <h2 className="text-xl md:text-2xl font-light text-white/90 tracking-wide">Full-Stack Developer & Tech Enthusiast</h2>
               </div>
