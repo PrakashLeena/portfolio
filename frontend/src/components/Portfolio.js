@@ -304,7 +304,7 @@ const Portfolio = () => {
                   </a>
                 ) : (
                   <a 
-                    href="https://drive.google.com/file/d/1HdJ96BQKgd978MCpza_9ccO8YfxOQ0XG/view?usp=drive_link"
+                    href="https://drive.google.com/file/d/1-NfCYAQAYxfHy9bgMfUSSnYYKg8AU8Ht/view?usp=drive_link"
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase"
