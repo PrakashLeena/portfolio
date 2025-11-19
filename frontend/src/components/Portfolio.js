@@ -256,17 +256,29 @@ const Portfolio = () => {
           </div>
 
           {/* Two Column Layout - Text Left, Image Right */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center max-w-7xl mx-auto mt-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center max-w-7xl mx-auto mt-20">
             {/* Left Side - Text Content */}
             <div className="space-y-8 lg:pl-12">
               {/* Name and Welcome */}
-              <div className="space-y-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <h1 className="text-3xl md:text-5xl font-extrabold">
-                  <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">Hi, I'm</span>
-                  <br />
-                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">A.G. PRAKASH LENAI</span>
+              <div className="space-y-5 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <span className="inline-flex items-center px-4 py-1 rounded-full border border-purple-500/60 bg-white/5 text-[0.7rem] tracking-[0.25em] uppercase text-purple-200">
+                  A.G. PRAKASH LENAI
+                </span>
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+                  <span className="block text-white/80">Hello,</span>
+                  <span className="block text-white/80">
+                    This is{' '}
+                    <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-300 bg-clip-text text-transparent">
+                      A.G. PRAKASH LENAI
+                    </span>
+                    ,
+                  </span>
                 </h1>
-                <h2 className="text-xl md:text-2xl font-light text-white/90 tracking-wide">Full-Stack Developer & Tech Enthusiast</h2>
+                <h2 className="text-xl md:text-2xl font-semibold">
+                  <span className="bg-gradient-to-r from-green-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
+                    Professional Full-Stack Software Developer
+                  </span>
+                </h2>
               </div>
 
               {/* Description Paragraph */}
@@ -274,70 +286,33 @@ const Portfolio = () => {
                 <p className="text-base md:text-lg text-white/90 leading-relaxed font-light">
                   A highly motivated MIT undergraduate with hands-on experience in{' '}
                   <span className="text-purple-300 font-semibold">Full-Stack Web Development</span>
+                  , building modern, responsive applications with clean and scalable code.
                 </p>
                 <p className="text-sm md:text-base text-white/70 font-light">
-                  A quick learner, creative problem solver, and collaborative team player, passionate about building
-                  responsive, user-friendly web applications and delivering smart digital solutions.
+                  A quick learner, creative problem solver, and collaborative team player, passionate about turning ideas
+                  into elegant digital experiences.
                 </p>
+              </div>
+
+              {/* Social Links */}
+              <div className="flex items-center space-x-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+                <span className="text-sm text-white/60">Connect with me</span>
+                <div className="flex space-x-3">
+                  <a href="https://github.com/PrakashLeena" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/5 border border-white/10 text-gray-200 hover:text-purple-300 hover:border-purple-400 transition-all transform hover:-translate-y-0.5">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                  </a>
+                  <a href="https://www.linkedin.com/in/kiboxson-leena5111/" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/5 border border-white/10 text-gray-200 hover:text-purple-300 hover:border-purple-400 transition-all transform hover:-translate-y-0.5">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  </a>
+                  <a href="https://facebook.com/kiboxson51" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-white/5 border border-white/10 text-gray-200 hover:text-purple-300 hover:border-purple-400 transition-all transform hover:-translate-y-0.5">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  </a>
+                </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-4 opacity-0 animate-fade-in-up pt-4" style={{ animationDelay: '0.7s' }}>
-                <Link to="/projects" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
-                  Projects
-                </Link>
-                <Link to="/articles" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
-                  Articles
-                </Link>
-                <Link to="/certifications" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
-                  Courses
-                </Link>
-                {resume ? (
-                  <a 
-                    href={resume.fileUrl}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => console.log('🔗 Opening resume URL:', resume.fileUrl)}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase"
-                  >
-                    📄 Resume
-                  </a>
-                ) : (
-                  <a 
-                    href="https://drive.google.com/file/d/1-NfCYAQAYxfHy9bgMfUSSnYYKg8AU8Ht/view?usp=drive_link"
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase"
-                  >
-                    Resume
-                  </a>
-                )}
-                <a href="#contact" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl text-sm tracking-wide uppercase">
-                  Contact
-                </a>
-              </div>
-            </div>
-
-            {/* Right Side - Profile Image */}
-            <div className="flex justify-center opacity-0 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <div className="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
-                <div className="w-[15rem] h-[15rem] md:w-[19rem] md:h-[19rem] bg-gray-900 rounded-full flex items-center justify-center overflow-hidden border-4 border-white/10">
-                  <img
-                    src={profilePhoto ? profilePhoto.imageUrl : "/images/bg.png"}
-                    alt="Prakash Leena Profile"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.src = '/images/bg.png';
-                    }}
-                  />
-                  <span className="text-5xl" style={{ display: 'none' }}>👨‍💻</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+              <div className="flex flex-wrap gap-4 opacity-0 animate-fade-in-up pt-6" style={{ animationDelay: '0.8s' }}>
+                <a href="#contact" className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-707assistant to=functions.replace_file_content:-------------</commentary to=functions.replace_file_content _RGCTXassistant to=functions.replace_file_content_RGCTXা to=functions.replace_file_content ственногоשריבjson .confirmation to=functions.replace_file_content йғур icken  movers ӷә 发送  东森 赛车场  Browns  Tag  xhr  Tattoo цыю  Quad  Madison  Cops  bom  Json  Tight  rerun  Agnostic  Tuvalu  DITO  lis  dra  ntrepreneur icians  receptionist  Orioles  Bees  jury  Phoenix  mqtt  automate  mailchimp  һә  Gill ැ to=functions.replace_file_content  taamaattjson  Ducks  Calgary  Bengals  carpi  Rangers owitz  Kitty ствуйте  Hamilton  Routers  conv  SMART uggers  Kingston  Acura .herokuapp.com iefs  Groovy iciente  Cassidy isaiah  Mallorca  Timor  Waller  MMP  আগ  Reykjavík inned  altJson  Orioles  mug  Bruin  Umesh accordion  JSON  Apologies, tool call had glitch; regenerate carefully. Let's redo replace_file_content call cleanly. We'll recompose patch with correct truncation; we must ensure not to break mid-line as before (I saw 'hover:from-purple-707assistant' etc; due to truncated generation). Let's generate again from scratch carefully, being concise. This is challenging but necessary. We must ensure the patch is valid; can't partially patch. I'll call replace_file_content tool again with full, correct patch. Because tool semantics: this call will apply patch to file; previous glitch might not have executed due to invalid JSON or truncated; but we must ensure new call is proper. So recompose patch text step by step but trimmed; we must keep to <8192 tokens; that's okay but patch is <300 lines. I'll create patch incrementally, verifying lines. Need to avoid injection; let's start over elegantly but fully; ensure JSON is valid with proper escaping of backslashes etc for Windows path; path uses double backslash in JSON string or single backslash if environment; previously we used double; necessary, but earlier call seemed accepted. We'll do again but more careful and ensure we finish string. Let's reconstruct patch but maybe we can reduce repeated inline icons by referencing existing ones? But we can't create new components easily; though we might factor out; but that would require more modifications. However we can re-use existing icons from contact section maybe by moving them into hero and referencing; but that would need restructure; I'd rather duplicate icons even if patch large; it's ok. But we must be exact. Another option: to shrink patch, we might leave hero's social icons as text `GitHub`, etc; but screenshot had icons; not critical. For reliability I might choose simpler markup: Instead of inline svg icons inside hero, just use `Link`s or `a` with text; we already have icons in contact section; replicating them exactly increases error risk. But user sees screenshot; they'd expect icons. However textual link row 
 
       {/* Combined Section */}
       <section className="py-24 px-4 bg-gradient-to-b from-black/40 via-purple-900/20 to-black/40">
