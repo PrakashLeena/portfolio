@@ -38,6 +38,10 @@ import {
     SiAdobephotoshop,
     SiAdobeillustrator,
     SiCanva,
+    SiCloudinary,
+    SiRender,
+    SiNumpy,
+    SiPandas,
 } from 'react-icons/si';
 import { DiJava } from 'react-icons/di';
 import { TbBrandCpp } from 'react-icons/tb';
@@ -46,10 +50,19 @@ import { TbBrandCpp } from 'react-icons/tb';
 export const getSkillIcon = (skillName) => {
     const name = skillName.toLowerCase().trim();
 
-    // HTML/CSS/JS
+    // HTML/CSS/JS - Check these FIRST before other checks
+    if (name === 'html' || name === 'html5') return { icon: FaHtml5, color: '#E34F26' };
+    if (name === 'css' || name === 'css3') return { icon: FaCss3Alt, color: '#1572B6' };
+    if (name === 'javascript' || name === 'js') return { icon: FaJs, color: '#F7DF1E' };
+    if (name === 'typescript' || name === 'ts') return { icon: SiTypescript, color: '#3178C6' };
+
+    // Python - Check BEFORE other languages
+    if (name === 'python') return { icon: FaPython, color: '#3776AB' };
+
+    // Now check with includes for variations
     if (name.includes('html')) return { icon: FaHtml5, color: '#E34F26' };
-    if (name.includes('css')) return { icon: FaCss3Alt, color: '#1572B6' };
-    if (name.includes('javascript') || name.includes('js')) return { icon: FaJs, color: '#F7DF1E' };
+    if (name.includes('css') && !name.includes('scss') && !name.includes('sass')) return { icon: FaCss3Alt, color: '#1572B6' };
+    if ((name.includes('javascript') || name.includes('js')) && !name.includes('json')) return { icon: FaJs, color: '#F7DF1E' };
     if (name.includes('typescript') || name.includes('ts')) return { icon: SiTypescript, color: '#3178C6' };
 
     // Frameworks & Libraries
@@ -65,6 +78,8 @@ export const getSkillIcon = (skillName) => {
     if (name.includes('node')) return { icon: FaNode, color: '#339933' };
     if (name.includes('express')) return { icon: SiExpress, color: '#000000' };
     if (name.includes('python')) return { icon: FaPython, color: '#3776AB' };
+    if (name.includes('numpy')) return { icon: SiNumpy, color: '#013243' };
+    if (name.includes('pandas')) return { icon: SiPandas, color: '#150458' };
     if (name.includes('java') && !name.includes('javascript')) return { icon: DiJava, color: '#007396' };
     if (name.includes('c++') || name.includes('cpp')) return { icon: TbBrandCpp, color: '#00599C' };
 
@@ -83,6 +98,8 @@ export const getSkillIcon = (skillName) => {
     if (name.includes('netlify')) return { icon: SiNetlify, color: '#00C7B7' };
     if (name.includes('vercel')) return { icon: SiVercel, color: '#000000' };
     if (name.includes('postman')) return { icon: SiPostman, color: '#FF6C37' };
+    if (name.includes('cloudinary')) return { icon: SiCloudinary, color: '#3448C5' };
+    if (name.includes('render')) return { icon: SiRender, color: '#46E3B7' };
 
     // Build Tools & Package Managers
     if (name.includes('webpack')) return { icon: SiWebpack, color: '#8DD6F9' };
