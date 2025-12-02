@@ -3,34 +3,30 @@ require('dotenv').config();
 
 const connectDB = async () => {
   const atlasUri = process.env.MONGODB_URI;
-  const localUri = 'mongodb://localhost:27017/portfolio';
-  
-  // Try Atlas first
-  if (atlasUri) {
-    try {
-      console.log('🔄 Attempting MongoDB Atlas connection...');
-      const conn = await mongoose.connect(atlasUri);
-      console.log(`✅ MongoDB Atlas Connected: ${conn.connection.host}`);
-      console.log(`📊 Database: ${conn.connection.name}`);
-      return;
-    } catch (atlasError) {
-      console.log('⚠️  Atlas connection failed:', atlasError.message);
-      console.log('💡 This is likely due to IP whitelist restrictions');
-      console.log('🔧 Please add your IP to MongoDB Atlas Network Access');
-    }
+
+  if (!atlasUri) {
+    console.error('❌ MONGODB_URI not found in .env file!');
+    throw new Error('MONGODB_URI is required');
   }
 
-  // Try local MongoDB as fallback
   try {
-    console.log('🔄 Trying local MongoDB...');
-    const conn = await mongoose.connect(localUri);
-    console.log(`✅ Local MongoDB Connected: ${conn.connection.host}`);
+    console.log('🔄 Connecting to MongoDB Atlas...');
+    console.log('🔗 URI:', atlasUri.replace(/:[^:@]+@/, ':****@')); // Hide password
+
+    const conn = await mongoose.connect(atlasUri, {
+      serverSelectionTimeoutMS: 15000, // 15 second timeout
+    });
+
+    console.log(`✅ MongoDB Atlas Connected: ${conn.connection.host}`);
     console.log(`📊 Database: ${conn.connection.name}`);
-  } catch (localError) {
-    console.log('⚠️  Local MongoDB also failed:', localError.message);
-    console.log('🚀 App will continue without database');
-    console.log('📧 Contact form will work but data won\'t be saved');
-    throw localError; // Let the calling code handle this
+  } catch (error) {
+    console.error('❌ Atlas connection failed:', error.message);
+    console.error('💡 Possible reasons:');
+    console.error('   - IP not whitelisted in MongoDB Atlas Network Access');
+    console.error('   - Invalid credentials in MONGODB_URI');
+    console.error('   - Network connectivity issues');
+    console.error('🔧 Please check your MongoDB Atlas settings');
+    throw error;
   }
 
   // Connection event listeners

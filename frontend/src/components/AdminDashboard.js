@@ -2004,7 +2004,7 @@ const AdminDashboard = () => {
                       <div className="flex flex-col md:flex-row items-start gap-6">
                         <div className="flex-shrink-0">
                           <img
-                            src={`${API_BASE_URL}${currentProfilePhoto.imageUrl}`}
+                            src={currentProfilePhoto.imageUrl}
                             alt="Current Profile"
                             className="w-48 h-48 rounded-full object-cover border-4 border-purple-500/50"
                             onError={(e) => {
@@ -2019,7 +2019,7 @@ const AdminDashboard = () => {
                           </p>
                           <div className="flex gap-3">
                             <a
-                              href={`${API_BASE_URL}${currentProfilePhoto.imageUrl}`}
+                              href={currentProfilePhoto.imageUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white rounded-lg transition-all duration-300 font-medium text-sm"

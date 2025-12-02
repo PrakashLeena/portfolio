@@ -13,10 +13,15 @@ const Projects = () => {
       try {
         console.log('📋 Fetching projects from API...');
         const result = await apiRequest('projects');
-        
-        if (result.success && result.data.projects) {
-          console.log('✅ Fetched projects:', result.data.projects);
+
+        console.log('🔍 Full API response:', result);
+
+        if (result.success && result.data && result.data.projects) {
+          console.log('✅ Fetched projects (data.projects):', result.data.projects);
           setDynamicProjects(result.data.projects);
+        } else if (result.success && result.projects) {
+          console.log('✅ Fetched projects (projects):', result.projects);
+          setDynamicProjects(result.projects);
         }
       } catch (error) {
         console.error('❌ Error fetching projects:', error);
@@ -31,10 +36,10 @@ const Projects = () => {
   // Map dynamic projects from database
   const allProjects = dynamicProjects.map((project) => {
     // Check if image is a full URL (Cloudinary) or relative path (local)
-    const imageUrl = project.image 
+    const imageUrl = project.image
       ? (project.image.startsWith('http') ? project.image : `${API_BASE_URL}${project.image}`)
       : '/images/default-project.png';
-    
+
     return {
       id: project._id,
       title: project.title,
@@ -121,6 +126,15 @@ const Projects = () => {
               A showcase of my development work and creative solutions
             </p>
             <div className="mx-auto mt-6 w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+
+            {/* DEBUG SECTION - REMOVE AFTER FIXING */}
+            <div className="mt-8 p-4 bg-black/50 rounded-lg text-left text-xs font-mono overflow-auto max-h-60 border border-red-500/50">
+              <p className="text-red-400 font-bold mb-2">🔧 DEBUG INFO:</p>
+              <p>API_BASE_URL: {API_BASE_URL}</p>
+              <p>Loading: {loading.toString()}</p>
+              <p>Projects Count: {dynamicProjects.length}</p>
+              <p>Raw Data Sample: {JSON.stringify(dynamicProjects.slice(0, 1), null, 2)}</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -135,127 +149,126 @@ const Projects = () => {
               </div>
             ) : (
               allProjects.map((project, index) => (
-              <div
-                key={project.id}
-                className="project-card group relative"
-                style={{
-                  animationDelay: `${index * 0.1}s`
-                }}
-              >
-                <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 hover:shadow-purple-500/50 hover:-translate-y-3 bg-white/5 backdrop-blur-md border border-white/10">
-                  <div className="relative">
-                    <img
-                      className="w-full h-48 object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
-                      src={project.image}
-                      alt={project.title}
-                    />
+                <div
+                  key={project.id}
+                  className="project-card group relative"
+                  style={{
+                    animationDelay: `${index * 0.1}s`
+                  }}
+                >
+                  <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 hover:shadow-purple-500/50 hover:-translate-y-3 bg-white/5 backdrop-blur-md border border-white/10">
+                    <div className="relative">
+                      <img
+                        className="w-full h-48 object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
+                        src={project.image}
+                        alt={project.title}
+                      />
 
-                    {/* Animated border effect */}
-                    <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-purple-400 transition-all duration-300 opacity-0 group-hover:opacity-100"></div>
+                      {/* Animated border effect */}
+                      <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-purple-400 transition-all duration-300 opacity-0 group-hover:opacity-100"></div>
 
-                    {/* Overlay with enhanced animation */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end justify-center pb-6">
-                      <div className="text-center transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                        <div className="mb-4">
-                          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mb-3 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
+                      {/* Overlay with enhanced animation */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end justify-center pb-6">
+                        <div className="text-center transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                          <div className="mb-4">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mb-3 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg">
+                              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </div>
                           </div>
-                        </div>
-                        <p className="text-white font-semibold text-lg mb-2">
-                          {project.link !== '#' ? (
-                            <a
-                              href={project.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-white hover:text-purple-200 transition-colors duration-300 font-bold"
-                            >
-                              View Project →
-                            </a>
-                          ) : (
-                            <span className="text-white font-bold">View Project</span>
-                          )}
-                        </p>
-                        <div className="flex justify-center space-x-2">
-                          {project.technologies.slice(0, 3).map((tech, techIndex) => (
-                            <span
-                              key={techIndex}
-                              className="px-2 py-1 text-xs bg-white/20 backdrop-blur-sm text-white rounded-full"
-                            >
-                              {tech}
-                            </span>
-                          ))}
+                          <p className="text-white font-semibold text-lg mb-2">
+                            {project.link !== '#' ? (
+                              <a
+                                href={project.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-white hover:text-purple-200 transition-colors duration-300 font-bold"
+                              >
+                                View Project →
+                              </a>
+                            ) : (
+                              <span className="text-white font-bold">View Project</span>
+                            )}
+                          </p>
+                          <div className="flex justify-center space-x-2">
+                            {project.technologies.slice(0, 3).map((tech, techIndex) => (
+                              <span
+                                key={techIndex}
+                                className="px-2 py-1 text-xs bg-white/20 backdrop-blur-sm text-white rounded-full"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-6">
-                    <h5 className="text-xl font-bold mb-2 text-white group-hover:text-purple-300 transition-colors duration-300">
-                      {project.title}
-                    </h5>
-                    <p className="text-white/70 text-sm mb-4 leading-relaxed group-hover:text-white/90 transition-colors duration-300">
-                      {project.description}
-                    </p>
+                    <div className="p-6">
+                      <h5 className="text-xl font-bold mb-2 text-white group-hover:text-purple-300 transition-colors duration-300">
+                        {project.title}
+                      </h5>
+                      <p className="text-white/70 text-sm mb-4 leading-relaxed group-hover:text-white/90 transition-colors duration-300">
+                        {project.description}
+                      </p>
 
-                    {/* Animated technology tags */}
-                    <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tech, techIndex) => (
-                        <span
-                          key={techIndex}
-                          className={`px-3 py-1 text-xs rounded-full border transition-all duration-300 transform hover:scale-105 ${
-                            tech.includes('HTML') ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200' :
-                            tech.includes('CSS') ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200' :
-                            tech.includes('Tailwind') ? 'bg-teal-100 text-teal-800 border-teal-200 hover:bg-teal-200' :
-                            tech.includes('JavaScript') ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200' :
-                            tech.includes('React') ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-200' :
-                            tech.includes('Vite') ? 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200' :
-                            tech.includes('Node') ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200' :
-                            tech.includes('Express') ? 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200' :
-                            tech.includes('MongoDB') ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200' :
-                            'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'
-                          }`}
+                      {/* Animated technology tags */}
+                      <div className="flex flex-wrap gap-2">
+                        {project.technologies.map((tech, techIndex) => (
+                          <span
+                            key={techIndex}
+                            className={`px-3 py-1 text-xs rounded-full border transition-all duration-300 transform hover:scale-105 ${tech.includes('HTML') ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200' :
+                              tech.includes('CSS') ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200' :
+                                tech.includes('Tailwind') ? 'bg-teal-100 text-teal-800 border-teal-200 hover:bg-teal-200' :
+                                  tech.includes('JavaScript') ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200' :
+                                    tech.includes('React') ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-200' :
+                                      tech.includes('Vite') ? 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200' :
+                                        tech.includes('Node') ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200' :
+                                          tech.includes('Express') ? 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200' :
+                                            tech.includes('MongoDB') ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200' :
+                                              'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'
+                              }`}
+                            style={{
+                              animationDelay: `${(index * 0.1) + (techIndex * 0.05)}s`
+                            }}
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Progress bar animation */}
+                      <div className="mt-4 w-full bg-white/10 rounded-full h-1 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-1 rounded-full transition-all duration-1000 ease-out"
                           style={{
-                            animationDelay: `${(index * 0.1) + (techIndex * 0.05)}s`
+                            width: '0%',
+                            animationDelay: `${index * 0.2}s`,
+                            animation: 'progress-fill 1s ease-out forwards'
                           }}
-                        >
-                          {tech}
-                        </span>
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Floating particles effect */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      {[...Array(3)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute w-2 h-2 bg-purple-400 rounded-full animate-ping"
+                          style={{
+                            animationDelay: `${i * 0.2}s`,
+                            animationDuration: '1.5s',
+                            left: `${Math.random() * 20}px`,
+                            top: `${Math.random() * 20}px`,
+                          }}
+                        ></div>
                       ))}
                     </div>
-
-                    {/* Progress bar animation */}
-                    <div className="mt-4 w-full bg-white/10 rounded-full h-1 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 h-1 rounded-full transition-all duration-1000 ease-out"
-                        style={{
-                          width: '0%',
-                          animationDelay: `${index * 0.2}s`,
-                          animation: 'progress-fill 1s ease-out forwards'
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Floating particles effect */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {[...Array(3)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute w-2 h-2 bg-purple-400 rounded-full animate-ping"
-                        style={{
-                          animationDelay: `${i * 0.2}s`,
-                          animationDuration: '1.5s',
-                          left: `${Math.random() * 20}px`,
-                          top: `${Math.random() * 20}px`,
-                        }}
-                      ></div>
-                    ))}
                   </div>
                 </div>
-              </div>
-            ))
+              ))
             )}
           </div>
 

@@ -6,6 +6,7 @@ const Certifications = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dynamicCertifications, setDynamicCertifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Certificate handling functions
   const showCopyFeedback = (button, message) => {
@@ -72,23 +73,34 @@ const Certifications = () => {
   };
 
   // Fetch certifications from API
-  useEffect(() => {
-    const fetchCertifications = async () => {
-      try {
-        console.log('📋 Fetching certifications...');
-        const result = await apiRequest('certifications');
-        
-        if (result.success && result.data.certifications) {
-          console.log('✅ Certifications fetched:', result.data.certifications);
-          setDynamicCertifications(result.data.certifications);
-        }
-      } catch (error) {
-        console.error('❌ Error fetching certifications:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCertifications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('📋 Fetching certifications...');
+      const result = await apiRequest('certifications');
 
+      console.log('🔍 Full API response:', result);
+
+      if (result.success && result.data && result.data.certifications) {
+        console.log('✅ Certifications fetched (data.certifications):', result.data.certifications);
+        setDynamicCertifications(result.data.certifications);
+      } else if (result.success && result.certifications) {
+        console.log('✅ Certifications fetched (certifications):', result.certifications);
+        setDynamicCertifications(result.certifications);
+      } else {
+        console.warn('⚠️ Fetch success but no data or success false:', result);
+        setError('Failed to load certifications. ' + (result.error || ''));
+      }
+    } catch (error) {
+      console.error('❌ Error fetching certifications:', error);
+      setError('Connection error. Please check your internet connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCertifications();
   }, []);
 
@@ -111,20 +123,16 @@ const Certifications = () => {
     <div className="relative min-h-screen text-white">
       {/* Mobile Menu Button */}
       <div
-        className={`fixed top-5 left-5 z-50 cursor-pointer flex flex-col justify-around w-10 h-10 p-2 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg shadow-lg transition-all duration-300 md:hidden ${
-          isMobileMenuOpen ? 'active' : ''
-        }`}
+        className={`fixed top-5 left-5 z-50 cursor-pointer flex flex-col justify-around w-10 h-10 p-2 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg shadow-lg transition-all duration-300 md:hidden ${isMobileMenuOpen ? 'active' : ''
+          }`}
         onClick={toggleMobileMenu}
       >
-        <span className={`block h-0.5 w-full bg-white transition-all duration-300 ${
-          isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''
-        }`}></span>
-        <span className={`block h-0.5 w-full bg-white transition-all duration-300 ${
-          isMobileMenuOpen ? 'opacity-0' : ''
-        }`}></span>
-        <span className={`block h-0.5 w-full bg-white transition-all duration-300 ${
-          isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
-        }`}></span>
+        <span className={`block h-0.5 w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''
+          }`}></span>
+        <span className={`block h-0.5 w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''
+          }`}></span>
+        <span className={`block h-0.5 w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
+          }`}></span>
       </div>
 
       {/* Header */}
@@ -162,6 +170,16 @@ const Certifications = () => {
               Courses & Certifications
             </h1>
             <div className="mx-auto mt-6 w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+
+            {/* DEBUG SECTION - REMOVE AFTER FIXING */}
+            <div className="mt-8 p-4 bg-black/50 rounded-lg text-left text-xs font-mono overflow-auto max-h-60 border border-red-500/50">
+              <p className="text-red-400 font-bold mb-2">🔧 DEBUG INFO:</p>
+              <p>API_BASE_URL: {API_BASE_URL}</p>
+              <p>Loading: {loading.toString()}</p>
+              <p>Error: {error || 'None'}</p>
+              <p>Certifications Count: {dynamicCertifications.length}</p>
+              <p>Raw Data Sample: {JSON.stringify(dynamicCertifications.slice(0, 1), null, 2)}</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
@@ -170,84 +188,94 @@ const Certifications = () => {
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
                 <p className="mt-4 text-white/70">Loading certifications...</p>
               </div>
+            ) : error ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-red-400 mb-4">{error}</p>
+                <button
+                  onClick={fetchCertifications}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-full text-white transition-colors"
+                >
+                  Retry Connection
+                </button>
+              </div>
             ) : allCertifications.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <p className="text-white/70">No certifications found</p>
               </div>
             ) : (
               allCertifications.map((cert, index) => (
-              <div
-                key={cert.id || index}
-                className="group relative bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-xl p-8 border border-white/10 hover:border-cyan-500/50 transition-all duration-300 cursor-pointer hover:transform hover:-translate-y-2"
-              >
-                <div className="flex items-start space-x-6">
-                  <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center overflow-hidden">
-                    {cert.image ? (
-                      <img
-                        src={cert.image}
-                        alt={cert.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src="/images/bg.png"
-                        alt="Profile"
-                        className="w-12 h-12 rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    )}
-                    <span className="text-2xl" style={{display: cert.image ? 'none' : 'flex'}}>👨‍💻</span>
+                <div
+                  key={cert.id || index}
+                  className="group relative bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-xl p-8 border border-white/10 hover:border-cyan-500/50 transition-all duration-300 cursor-pointer hover:transform hover:-translate-y-2"
+                >
+                  <div className="flex items-start space-x-6">
+                    <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+                      {cert.image ? (
+                        <img
+                          src={cert.image}
+                          alt={cert.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src="/images/bg.png"
+                          alt="Profile"
+                          className="w-12 h-12 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      )}
+                      <span className="text-2xl" style={{ display: cert.image ? 'none' : 'flex' }}>👨‍💻</span>
+                    </div>
+
+                    <div className="flex-1">
+                      <h2 className="text-lg md:text-xl text-white mb-1 leading-relaxed">
+                        {cert.title}
+                      </h2>
+                      {cert.issuer && (
+                        <p className="text-sm text-cyan-400 mb-1">{cert.issuer}</p>
+                      )}
+                      {cert.date && (
+                        <p className="text-xs text-white/60 mb-2">{cert.date}</p>
+                      )}
+                      {cert.description && (
+                        <p className="text-sm text-white/70 mb-3">{cert.description}</p>
+                      )}
+
+                      {cert.certificate && (
+                        <div className="flex flex-col space-y-2">
+                          <a
+                            href={cert.certificate}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-sm underline decoration-1 underline-offset-2 transition-colors duration-200"
+                          >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            View Certificate →
+                          </a>
+                          <button
+                            onClick={(e) => handleCopyLink(e, cert.certificate)}
+                            className="text-xs text-gray-400 hover:text-gray-300 underline transition-colors duration-200"
+                          >
+                            Copy Link
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex-1">
-                    <h2 className="text-lg md:text-xl text-white mb-1 leading-relaxed">
-                      {cert.title}
-                    </h2>
-                    {cert.issuer && (
-                      <p className="text-sm text-cyan-400 mb-1">{cert.issuer}</p>
-                    )}
-                    {cert.date && (
-                      <p className="text-xs text-white/60 mb-2">{cert.date}</p>
-                    )}
-                    {cert.description && (
-                      <p className="text-sm text-white/70 mb-3">{cert.description}</p>
-                    )}
-
-                    {cert.certificate && (
-                      <div className="flex flex-col space-y-2">
-                        <a
-                          href={cert.certificate}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-sm underline decoration-1 underline-offset-2 transition-colors duration-200"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                          View Certificate →
-                        </a>
-                        <button
-                          onClick={(e) => handleCopyLink(e, cert.certificate)}
-                          className="text-xs text-gray-400 hover:text-gray-300 underline transition-colors duration-200"
-                        >
-                          Copy Link
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  {/* Hover Effect Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-cyan-500/0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                 </div>
-
-                {/* Hover Effect Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-cyan-500/0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-              </div>
-            ))
+              ))
             )}
           </div>
         </div>

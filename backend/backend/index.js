@@ -23,7 +23,7 @@ const upload = multer({
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     } else {
@@ -43,7 +43,7 @@ const uploadResume = multer({
     const allowedTypes = /pdf/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = file.mimetype === 'application/pdf';
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     } else {
@@ -59,10 +59,10 @@ const corsOptions = {
     if (!origin) {
       return callback(null, true);
     }
-    
+
     const allowedOrigins = [
-      'http://localhost:3000', 
-      'http://127.0.0.1:3000', 
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
       'http://localhost:3001',
       // Add specific production domains
       'https://kiboxson.vercel.app',
@@ -78,7 +78,7 @@ const corsOptions = {
       /^https:\/\/[\w-]+\.up\.railway\.app$/, // Allow Railway custom domains
       /^https?:\/\/localhost(:\d+)?$/, // Allow any localhost port
     ];
-    
+
     // Check if origin matches any allowed pattern
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (typeof allowedOrigin === 'string') {
@@ -88,7 +88,7 @@ const corsOptions = {
       }
       return false;
     });
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -106,7 +106,19 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Connect to MongoDB Atlas (with error handling)
-connectDB().catch(err => {
+connectDB().then(async () => {
+  try {
+    const projectCount = await Project.countDocuments();
+    const certCount = await Certification.countDocuments();
+    console.log(`📊 STARTUP CHECK: Found ${projectCount} projects and ${certCount} certifications in DB`);
+
+    // List all collections to debug naming issues
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('🗄️  Available Collections:', collections.map(c => c.name).join(', '));
+  } catch (err) {
+    console.error('❌ Error checking DB counts:', err);
+  }
+}).catch(err => {
   console.log('⚠️  MongoDB connection failed, running without database');
   console.log('Contact form will work but emails won\'t be sent');
 });
@@ -148,8 +160,8 @@ const Blog = mongoose.model("Blog", blogSchema, "Blogs");
 const portfolioLikesSchema = new mongoose.Schema({
   totalLikes: { type: Number, default: 0 },
   lastUpdated: { type: Date, default: Date.now },
-  likedUsers: [{ 
-    ip: String, 
+  likedUsers: [{
+    ip: String,
     userAgent: String,
     timestamp: { type: Date, default: Date.now }
   }]
@@ -229,8 +241,8 @@ const ProfilePhoto = mongoose.model("ProfilePhoto", profilePhotoSchema, "Profile
 
 // Root endpoint for Railway health checks
 app.get('/', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'Portfolio Backend API is running',
     timestamp: new Date().toISOString(),
     port: process.env.PORT || 5000,
@@ -240,8 +252,8 @@ app.get('/', (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'Backend server is running',
     timestamp: new Date().toISOString(),
     mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
@@ -250,7 +262,7 @@ app.get('/health', (req, res) => {
 
 // Test endpoint
 app.get('/test', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Backend is working!',
     cors: 'CORS is configured',
     endpoints: ['/health', '/test', '/contact', '/sendmail', '/blogs', '/admin/login']
@@ -260,13 +272,13 @@ app.get('/test', (req, res) => {
 // Admin authentication endpoint
 app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
-  
+
   // Simple admin credentials (you can change these)
   const ADMIN_USERNAME = 'kibo';
   const ADMIN_PASSWORD = '123456';
-  
+
   console.log(`🔐 Admin login attempt: ${username}`);
-  
+
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
     console.log('✅ Admin login successful');
     res.json({
@@ -288,7 +300,7 @@ app.post('/upload', (req, res) => {
   upload.single('image')(req, res, async (err) => {
     if (err) {
       console.error('❌ Multer error:', err);
-      
+
       // Handle multer-specific errors
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -302,14 +314,14 @@ app.post('/upload', (req, res) => {
           message: `Upload error: ${err.message}`
         });
       }
-      
+
       // Handle custom errors (like file type validation)
       return res.status(400).json({
         success: false,
         message: err.message || 'Error uploading file'
       });
     }
-    
+
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -319,7 +331,7 @@ app.post('/upload', (req, res) => {
       }
 
       console.log('📸 Uploading image to Cloudinary...');
-      
+
       // Upload to Cloudinary using upload_stream
       const uploadPromise = new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -336,15 +348,15 @@ app.post('/upload', (req, res) => {
             else resolve(result);
           }
         );
-        
+
         // Pipe the buffer to Cloudinary
         uploadStream.end(req.file.buffer);
       });
-      
+
       const result = await uploadPromise;
-      
+
       console.log('✅ Image uploaded to Cloudinary:', result.secure_url);
-      
+
       res.json({
         success: true,
         message: 'File uploaded successfully',
@@ -368,7 +380,7 @@ app.post('/upload-resume', (req, res) => {
   uploadResume.single('resume')(req, res, async (err) => {
     if (err) {
       console.error('❌ Multer error (resume):', err);
-      
+
       // Handle multer-specific errors
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -382,14 +394,14 @@ app.post('/upload-resume', (req, res) => {
           message: `Upload error: ${err.message}`
         });
       }
-      
+
       // Handle custom errors (like file type validation)
       return res.status(400).json({
         success: false,
         message: err.message || 'Error uploading resume'
       });
     }
-    
+
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -399,7 +411,7 @@ app.post('/upload-resume', (req, res) => {
       }
 
       console.log('📄 Uploading resume to Cloudinary...');
-      
+
       // Upload PDF to Cloudinary
       const uploadPromise = new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -413,14 +425,14 @@ app.post('/upload-resume', (req, res) => {
             else resolve(result);
           }
         );
-        
+
         uploadStream.end(req.file.buffer);
       });
-      
+
       const result = await uploadPromise;
-      
+
       console.log('✅ Resume uploaded to Cloudinary:', result.secure_url);
-      
+
       res.json({
         success: true,
         message: 'Resume uploaded successfully',
@@ -447,7 +459,7 @@ app.post('/upload-resume', (req, res) => {
 app.get('/projects', async (req, res) => {
   try {
     const projects = await Project.find().sort({ createdAt: -1 });
-    
+
     res.json({
       success: true,
       projects: projects
@@ -466,9 +478,9 @@ app.get('/projects', async (req, res) => {
 app.post('/projects', async (req, res) => {
   try {
     const { title, description, technologies, githubUrl, liveUrl, image } = req.body;
-    
+
     console.log('💼 Adding new project:', title);
-    
+
     // Create new project in database
     const newProject = new Project({
       title,
@@ -478,10 +490,10 @@ app.post('/projects', async (req, res) => {
       liveUrl,
       image
     });
-    
+
     await newProject.save();
     console.log('✅ Project saved to database:', newProject._id);
-    
+
     res.json({
       success: true,
       message: 'Project added successfully',
@@ -501,18 +513,18 @@ app.post('/projects', async (req, res) => {
 app.delete('/projects/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     console.log('🗑️ Deleting project:', id);
-    
+
     const deletedProject = await Project.findByIdAndDelete(id);
-    
+
     if (!deletedProject) {
       return res.status(404).json({
         success: false,
         message: 'Project not found'
       });
     }
-    
+
     // Delete associated image from Cloudinary if it exists
     if (deletedProject.imagePublicId) {
       try {
@@ -522,9 +534,9 @@ app.delete('/projects/:id', async (req, res) => {
         console.warn('⚠️ Could not delete image from Cloudinary:', cloudinaryError.message);
       }
     }
-    
+
     console.log('✅ Project deleted successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Project deleted successfully',
@@ -545,7 +557,7 @@ app.delete('/projects/:id', async (req, res) => {
 app.get('/experiences', async (req, res) => {
   try {
     const experiences = await Experience.find().sort({ createdAt: -1 });
-    
+
     res.json({
       success: true,
       experiences: experiences
@@ -564,9 +576,9 @@ app.get('/experiences', async (req, res) => {
 app.post('/experiences', async (req, res) => {
   try {
     const { title, company, duration, description, skills } = req.body;
-    
+
     console.log('👨‍💻 Adding new experience:', title, 'at', company);
-    
+
     const newExperience = new Experience({
       title,
       company,
@@ -574,10 +586,10 @@ app.post('/experiences', async (req, res) => {
       description,
       skills
     });
-    
+
     await newExperience.save();
     console.log('✅ Experience saved to database:', newExperience._id);
-    
+
     res.json({
       success: true,
       message: 'Work experience added successfully',
@@ -598,24 +610,24 @@ app.put('/experiences/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, company, duration, description, skills } = req.body;
-    
+
     console.log('✏️ Updating experience:', id);
-    
+
     const updatedExperience = await Experience.findByIdAndUpdate(
       id,
       { title, company, duration, description, skills },
       { new: true, runValidators: true }
     );
-    
+
     if (!updatedExperience) {
       return res.status(404).json({
         success: false,
         message: 'Experience not found'
       });
     }
-    
+
     console.log('✅ Experience updated successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Experience updated successfully',
@@ -635,20 +647,20 @@ app.put('/experiences/:id', async (req, res) => {
 app.delete('/experiences/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     console.log('🗑️ Deleting experience:', id);
-    
+
     const deletedExperience = await Experience.findByIdAndDelete(id);
-    
+
     if (!deletedExperience) {
       return res.status(404).json({
         success: false,
         message: 'Experience not found'
       });
     }
-    
+
     console.log('✅ Experience deleted successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Experience deleted successfully',
@@ -669,7 +681,7 @@ app.delete('/experiences/:id', async (req, res) => {
 app.get('/skills', async (req, res) => {
   try {
     const skills = await Skill.find().sort({ createdAt: -1 });
-    
+
     res.json({
       success: true,
       skills: skills
@@ -688,17 +700,17 @@ app.get('/skills', async (req, res) => {
 app.post('/skills', async (req, res) => {
   try {
     const { category, skills } = req.body;
-    
+
     console.log('⚡ Adding new skill category:', category);
-    
+
     const newSkill = new Skill({
       category,
       skills
     });
-    
+
     await newSkill.save();
     console.log('✅ Skill saved to database:', newSkill._id);
-    
+
     res.json({
       success: true,
       message: 'Technical skill added successfully',
@@ -719,24 +731,24 @@ app.put('/skills/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { category, skills } = req.body;
-    
+
     console.log('✏️ Updating skill:', id);
-    
+
     const updatedSkill = await Skill.findByIdAndUpdate(
       id,
       { category, skills },
       { new: true, runValidators: true }
     );
-    
+
     if (!updatedSkill) {
       return res.status(404).json({
         success: false,
         message: 'Skill not found'
       });
     }
-    
+
     console.log('✅ Skill updated successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Skill updated successfully',
@@ -756,20 +768,20 @@ app.put('/skills/:id', async (req, res) => {
 app.delete('/skills/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     console.log('🗑️ Deleting skill:', id);
-    
+
     const deletedSkill = await Skill.findByIdAndDelete(id);
-    
+
     if (!deletedSkill) {
       return res.status(404).json({
         success: false,
         message: 'Skill not found'
       });
     }
-    
+
     console.log('✅ Skill deleted successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Skill deleted successfully',
@@ -789,8 +801,10 @@ app.delete('/skills/:id', async (req, res) => {
 // GET all certifications
 app.get('/certifications', async (req, res) => {
   try {
+    console.log('📥 GET /certifications request received');
     const certifications = await Certification.find().sort({ createdAt: -1 });
-    
+    console.log(`✅ Found ${certifications.length} certifications`);
+
     res.json({
       success: true,
       certifications: certifications
@@ -809,9 +823,9 @@ app.get('/certifications', async (req, res) => {
 app.post('/certifications', async (req, res) => {
   try {
     const { title, issuer, date, credentialUrl, description, image } = req.body;
-    
+
     console.log('🏆 Adding new certification:', title, 'from', issuer);
-    
+
     const newCertification = new Certification({
       title,
       issuer,
@@ -820,10 +834,10 @@ app.post('/certifications', async (req, res) => {
       description,
       image
     });
-    
+
     await newCertification.save();
     console.log('✅ Certification saved to database:', newCertification._id);
-    
+
     res.json({
       success: true,
       message: 'Certification added successfully',
@@ -844,24 +858,24 @@ app.put('/certifications/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, issuer, date, credentialUrl, description, image } = req.body;
-    
+
     console.log('✏️ Updating certification:', id);
-    
+
     const updatedCertification = await Certification.findByIdAndUpdate(
       id,
       { title, issuer, date, credentialUrl, description, image },
       { new: true, runValidators: true }
     );
-    
+
     if (!updatedCertification) {
       return res.status(404).json({
         success: false,
         message: 'Certification not found'
       });
     }
-    
+
     console.log('✅ Certification updated successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Certification updated successfully',
@@ -881,18 +895,18 @@ app.put('/certifications/:id', async (req, res) => {
 app.delete('/certifications/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     console.log('🗑️ Deleting certification:', id);
-    
+
     const deletedCertification = await Certification.findByIdAndDelete(id);
-    
+
     if (!deletedCertification) {
       return res.status(404).json({
         success: false,
         message: 'Certification not found'
       });
     }
-    
+
     // Delete associated image file if it exists
     if (deletedCertification.image && deletedCertification.image.startsWith('/uploads/')) {
       const imagePath = path.join(__dirname, deletedCertification.image);
@@ -901,9 +915,9 @@ app.delete('/certifications/:id', async (req, res) => {
         console.log('🗑️ Deleted image file:', imagePath);
       }
     }
-    
+
     console.log('✅ Certification deleted successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Certification deleted successfully',
@@ -924,29 +938,29 @@ app.delete('/certifications/:id', async (req, res) => {
 app.post('/resume', async (req, res) => {
   try {
     const { fileName, fileUrl } = req.body;
-    
+
     if (!fileName || !fileUrl) {
       return res.status(400).json({
         success: false,
         message: 'fileName and fileUrl are required'
       });
     }
-    
+
     console.log('📄 Uploading resume:', fileName);
-    
+
     // Deactivate all previous resumes
     await Resume.updateMany({}, { isActive: false });
-    
+
     // Create new resume entry
     const newResume = new Resume({
       fileName,
       fileUrl,
       isActive: true
     });
-    
+
     await newResume.save();
     console.log('✅ Resume saved to database:', newResume._id);
-    
+
     res.json({
       success: true,
       message: 'Resume uploaded successfully',
@@ -966,25 +980,21 @@ app.post('/resume', async (req, res) => {
 app.get('/resume', async (req, res) => {
   try {
     const resume = await Resume.findOne({ isActive: true }).sort({ uploadedAt: -1 });
-    
+
     if (!resume) {
       console.log('⚠️ No active resume found in database');
       return res.json({
         success: true,
-        data: {
-          resume: null
-        }
+        resume: null
       });
     }
-    
+
     console.log('✅ Active resume found:', resume.fileName);
     console.log('📎 Resume URL:', resume.fileUrl);
-    
+
     res.json({
       success: true,
-      data: {
-        resume: resume
-      }
+      resume: resume
     });
   } catch (error) {
     console.error('❌ Error fetching resume:', error);
@@ -1000,18 +1010,18 @@ app.get('/resume', async (req, res) => {
 app.delete('/resume/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     console.log('🗑️ Deleting resume:', id);
-    
+
     const deletedResume = await Resume.findByIdAndDelete(id);
-    
+
     if (!deletedResume) {
       return res.status(404).json({
         success: false,
         message: 'Resume not found'
       });
     }
-    
+
     // Delete associated file if it exists
     if (deletedResume.fileUrl && deletedResume.fileUrl.startsWith('/uploads/')) {
       const filePath = path.join(__dirname, deletedResume.fileUrl);
@@ -1020,9 +1030,9 @@ app.delete('/resume/:id', async (req, res) => {
         console.log('🗑️ Deleted resume file:', filePath);
       }
     }
-    
+
     console.log('✅ Resume deleted successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Resume deleted successfully',
@@ -1043,28 +1053,28 @@ app.delete('/resume/:id', async (req, res) => {
 app.post('/profile-photo', async (req, res) => {
   try {
     const { imageUrl } = req.body;
-    
+
     if (!imageUrl) {
       return res.status(400).json({
         success: false,
         message: 'imageUrl is required'
       });
     }
-    
+
     console.log('📸 Uploading profile photo:', imageUrl);
-    
+
     // Deactivate all previous profile photos
     await ProfilePhoto.updateMany({}, { isActive: false });
-    
+
     // Create new profile photo entry
     const newProfilePhoto = new ProfilePhoto({
       imageUrl,
       isActive: true
     });
-    
+
     await newProfilePhoto.save();
     console.log('✅ Profile photo saved to database:', newProfilePhoto._id);
-    
+
     res.json({
       success: true,
       message: 'Profile photo uploaded successfully',
@@ -1084,25 +1094,21 @@ app.post('/profile-photo', async (req, res) => {
 app.get('/profile-photo', async (req, res) => {
   try {
     const profilePhoto = await ProfilePhoto.findOne({ isActive: true }).sort({ uploadedAt: -1 });
-    
+
     if (!profilePhoto) {
       console.log('⚠️ No active profile photo found in database');
       return res.json({
         success: true,
-        data: {
-          profilePhoto: null
-        }
+        profilePhoto: null
       });
     }
-    
+
     console.log('✅ Active profile photo found');
     console.log('📸 Profile photo URL:', profilePhoto.imageUrl);
-    
+
     res.json({
       success: true,
-      data: {
-        profilePhoto: profilePhoto
-      }
+      profilePhoto: profilePhoto
     });
   } catch (error) {
     console.error('❌ Error fetching profile photo:', error);
@@ -1118,18 +1124,18 @@ app.get('/profile-photo', async (req, res) => {
 app.delete('/profile-photo/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     console.log('🗑️ Deleting profile photo:', id);
-    
+
     const deletedPhoto = await ProfilePhoto.findByIdAndDelete(id);
-    
+
     if (!deletedPhoto) {
       return res.status(404).json({
         success: false,
         message: 'Profile photo not found'
       });
     }
-    
+
     // Delete associated image file if it exists
     if (deletedPhoto.imageUrl && deletedPhoto.imageUrl.startsWith('/uploads/')) {
       const imagePath = path.join(__dirname, deletedPhoto.imageUrl);
@@ -1138,9 +1144,9 @@ app.delete('/profile-photo/:id', async (req, res) => {
         console.log('🗑️ Deleted image file:', imagePath);
       }
     }
-    
+
     console.log('✅ Profile photo deleted successfully:', id);
-    
+
     res.json({
       success: true,
       message: 'Profile photo deleted successfully',
@@ -1164,7 +1170,7 @@ app.get('/blogs', async (req, res) => {
     const blogs = await Blog.find({ published: true })
       .sort({ createdAt: -1 })
       .limit(10);
-    
+
     res.json({
       success: true,
       blogs: blogs
@@ -1228,7 +1234,7 @@ app.post('/blogs', async (req, res) => {
 
     await newBlog.save();
     console.log(`📝 New blog created: ${title}`);
-    
+
     res.json({
       success: true,
       message: 'Blog created successfully!',
@@ -1247,7 +1253,7 @@ app.post('/blogs', async (req, res) => {
 app.put('/blogs/:id', async (req, res) => {
   try {
     const { title, content, category, tags } = req.body;
-    
+
     const updatedBlog = await Blog.findByIdAndUpdate(
       req.params.id,
       {
@@ -1286,7 +1292,7 @@ app.put('/blogs/:id', async (req, res) => {
 app.delete('/blogs/:id', async (req, res) => {
   try {
     const deletedBlog = await Blog.findByIdAndDelete(req.params.id);
-    
+
     if (!deletedBlog) {
       return res.status(404).json({
         success: false,
@@ -1312,7 +1318,7 @@ app.delete('/blogs/:id', async (req, res) => {
 app.post('/blogs/:id/like', async (req, res) => {
   try {
     console.log(`💖 Like request received for blog ID: ${req.params.id}`);
-    
+
     const blog = await Blog.findById(req.params.id);
     if (!blog) {
       console.log(`❌ Blog not found with ID: ${req.params.id}`);
@@ -1327,7 +1333,7 @@ app.post('/blogs/:id/like', async (req, res) => {
     await blog.save();
 
     console.log(`❤️ Blog liked: "${blog.title}" (${previousLikes} → ${blog.likes} likes)`);
-    
+
     res.json({
       success: true,
       likes: blog.likes,
@@ -1336,7 +1342,7 @@ app.post('/blogs/:id/like', async (req, res) => {
   } catch (error) {
     console.error('❌ Error liking blog:', error);
     console.error('Error details:', error.message);
-    
+
     res.status(500).json({
       success: false,
       message: 'Failed to like blog: ' + error.message
@@ -1348,29 +1354,29 @@ app.post('/blogs/:id/like', async (req, res) => {
 
 // Helper function to get user IP
 const getUserIP = (req) => {
-  return req.headers['x-forwarded-for']?.split(',')[0] || 
-         req.headers['x-real-ip'] || 
-         req.connection.remoteAddress || 
-         req.socket.remoteAddress || 
-         'unknown';
+  return req.headers['x-forwarded-for']?.split(',')[0] ||
+    req.headers['x-real-ip'] ||
+    req.connection.remoteAddress ||
+    req.socket.remoteAddress ||
+    'unknown';
 };
 
 // Get portfolio likes and check if user has liked
 app.get('/portfolio/likes', async (req, res) => {
   try {
     const userIP = getUserIP(req);
-    
+
     let portfolioLikes = await PortfolioLikes.findOne();
-    
+
     // If no likes document exists, create one
     if (!portfolioLikes) {
       portfolioLikes = new PortfolioLikes({ totalLikes: 0, likedUsers: [] });
       await portfolioLikes.save();
     }
-    
+
     // Check if this user has already liked
     const hasLiked = portfolioLikes.likedUsers.some(user => user.ip === userIP);
-    
+
     res.json({
       success: true,
       likes: portfolioLikes.totalLikes,
@@ -1390,20 +1396,20 @@ app.post('/portfolio/like', async (req, res) => {
   try {
     const userIP = getUserIP(req);
     const userAgent = req.headers['user-agent'] || 'unknown';
-    
+
     let portfolioLikes = await PortfolioLikes.findOne();
-    
+
     // If no likes document exists, create one
     if (!portfolioLikes) {
-      portfolioLikes = new PortfolioLikes({ 
-        totalLikes: 0, 
-        likedUsers: [] 
+      portfolioLikes = new PortfolioLikes({
+        totalLikes: 0,
+        likedUsers: []
       });
     }
-    
+
     // Check if user has already liked
     const hasLiked = portfolioLikes.likedUsers.some(user => user.ip === userIP);
-    
+
     if (hasLiked) {
       return res.status(400).json({
         success: false,
@@ -1411,7 +1417,7 @@ app.post('/portfolio/like', async (req, res) => {
         likes: portfolioLikes.totalLikes
       });
     }
-    
+
     // Add like
     portfolioLikes.totalLikes += 1;
     portfolioLikes.likedUsers.push({
@@ -1421,9 +1427,9 @@ app.post('/portfolio/like', async (req, res) => {
     });
     portfolioLikes.lastUpdated = new Date();
     await portfolioLikes.save();
-    
+
     console.log(`❤️ Portfolio liked by ${userIP}: ${portfolioLikes.totalLikes} total likes`);
-    
+
     res.json({
       success: true,
       likes: portfolioLikes.totalLikes,
@@ -1442,19 +1448,19 @@ app.post('/portfolio/like', async (req, res) => {
 app.post('/portfolio/unlike', async (req, res) => {
   try {
     const userIP = getUserIP(req);
-    
+
     let portfolioLikes = await PortfolioLikes.findOne();
-    
+
     if (!portfolioLikes) {
       return res.status(404).json({
         success: false,
         message: 'No likes found'
       });
     }
-    
+
     // Check if user has liked
     const userIndex = portfolioLikes.likedUsers.findIndex(user => user.ip === userIP);
-    
+
     if (userIndex === -1) {
       return res.status(400).json({
         success: false,
@@ -1462,15 +1468,15 @@ app.post('/portfolio/unlike', async (req, res) => {
         likes: portfolioLikes.totalLikes
       });
     }
-    
+
     // Remove like
     portfolioLikes.totalLikes = Math.max(0, portfolioLikes.totalLikes - 1);
     portfolioLikes.likedUsers.splice(userIndex, 1);
     portfolioLikes.lastUpdated = new Date();
     await portfolioLikes.save();
-    
+
     console.log(`💔 Portfolio unliked by ${userIP}: ${portfolioLikes.totalLikes} total likes`);
-    
+
     res.json({
       success: true,
       likes: portfolioLikes.totalLikes,
@@ -1533,9 +1539,9 @@ app.post("/contact", async (req, res) => {
   console.log('📧 Contact form submission received:', { name, email, message: message.substring(0, 50) + '...' });
 
   if (!name || !message) {
-    return res.status(400).json({ 
-      success: false, 
-      message: "Name and message are required" 
+    return res.status(400).json({
+      success: false,
+      message: "Name and message are required"
     });
   }
 
@@ -1555,7 +1561,7 @@ app.post("/contact", async (req, res) => {
 
     // Get email credentials from database or environment variables
     let emailUser, emailPass;
-    
+
     try {
       const data = await Credential.find();
       if (data && data.length > 0) {
@@ -1567,12 +1573,12 @@ app.post("/contact", async (req, res) => {
         emailUser = process.env.EMAIL_USER || 'kiboxsonleena51@gmail.com';
         emailPass = process.env.EMAIL_PASS;
         console.log('📧 Using email credentials from environment variables');
-        
+
         if (!emailPass) {
           console.log('⚠️  No email credentials found in database or environment');
-          return res.status(500).json({ 
-            success: false, 
-            message: "Email configuration not available. Please contact admin." 
+          return res.status(500).json({
+            success: false,
+            message: "Email configuration not available. Please contact admin."
           });
         }
       }
@@ -1580,12 +1586,12 @@ app.post("/contact", async (req, res) => {
       console.log('⚠️  Database error, using environment variables:', dbError.message);
       emailUser = process.env.EMAIL_USER || 'kiboxsonleena51@gmail.com';
       emailPass = process.env.EMAIL_PASS;
-      
+
       if (!emailPass) {
         console.log('⚠️  No email credentials available');
-        return res.status(500).json({ 
-          success: false, 
-          message: "Email configuration not available. Please contact admin." 
+        return res.status(500).json({
+          success: false,
+          message: "Email configuration not available. Please contact admin."
         });
       }
     }
@@ -1636,25 +1642,25 @@ app.post("/contact", async (req, res) => {
     });
 
     console.log(`📧 Email sent successfully to kiboxsonleena2004@gmail.com from ${name}`);
-    res.json({ 
-      success: true, 
-      message: "Message sent successfully!" 
+    res.json({
+      success: true,
+      message: "Message sent successfully!"
     });
 
   } catch (error) {
     console.error("❌ Error processing contact form:", error);
-    
+
     // If email fails but message was saved to database, still return success
     if (mongoose.connection.readyState === 1) {
       console.log('💾 Message saved to database despite email error');
-      res.json({ 
-        success: true, 
-        message: "Message received! We'll get back to you soon." 
+      res.json({
+        success: true,
+        message: "Message received! We'll get back to you soon."
       });
     } else {
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to send message. Please try again." 
+      res.status(500).json({
+        success: false,
+        message: "Failed to send message. Please try again."
       });
     }
   }
@@ -1664,10 +1670,10 @@ const PORT = process.env.PORT || 5000;
 
 // Start the server (Railway, local development, or other hosting)
 // Skip app.listen() for serverless environments (Vercel, Netlify, AWS Lambda)
-const isServerless = process.env.VERCEL || 
-                     process.env.NETLIFY || 
-                     process.env.AWS_LAMBDA_FUNCTION_NAME ||
-                     process.env.LAMBDA_TASK_ROOT;
+const isServerless = process.env.VERCEL ||
+  process.env.NETLIFY ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.LAMBDA_TASK_ROOT;
 
 if (!isServerless) {
   app.listen(PORT, '0.0.0.0', () => {
