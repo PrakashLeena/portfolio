@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 @layer utilities {
+
   /* Fade animations */
   @keyframes fade-in {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -18,6 +20,7 @@
       opacity: 0;
       transform: translateY(30px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -29,9 +32,11 @@
     0% {
       background-position: 0% 50%;
     }
+
     50% {
       background-position: 100% 50%;
     }
+
     100% {
       background-position: 0% 50%;
     }
@@ -39,27 +44,36 @@
 
   /* Float animations */
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-20px);
     }
   }
 
   @keyframes float-slow {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-10px);
     }
   }
 
   @keyframes float-fast {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-15px);
     }
@@ -71,12 +85,15 @@
       transform: translateX(-100vw) rotate(0deg);
       opacity: 0;
     }
+
     10% {
       opacity: 1;
     }
+
     90% {
       opacity: 1;
     }
+
     100% {
       transform: translateX(100vw) rotate(360deg);
       opacity: 0;
@@ -88,12 +105,15 @@
       transform: translateX(100vw) rotate(0deg);
       opacity: 0;
     }
+
     10% {
       opacity: 1;
     }
+
     90% {
       opacity: 1;
     }
+
     100% {
       transform: translateX(-100vw) rotate(-360deg);
       opacity: 0;
@@ -102,10 +122,13 @@
 
   /* Pulse glow animation */
   @keyframes pulse-glow {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 0.3;
       transform: scale(1);
     }
+
     50% {
       opacity: 0.6;
       transform: scale(1.1);
@@ -117,6 +140,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -124,9 +148,12 @@
 
   /* Background pulse animation */
   @keyframes backgroundPulse {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 1;
     }
+
     50% {
       opacity: 0.8;
     }
@@ -171,5 +198,311 @@
 
   .animate-rotate-slow {
     animation: rotate-slow 20s linear infinite;
+  }
+
+  /* Scroll-triggered animations */
+  @keyframes slide-in-left {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fade-in-down {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Scroll animation classes */
+  .scroll-animate {
+    opacity: 0;
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .scroll-animate.visible {
+    opacity: 1;
+  }
+
+  .scroll-slide-left {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+
+  .scroll-slide-left.visible {
+    animation: slide-in-left 0.8s ease-out forwards;
+  }
+
+  .scroll-slide-right {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+
+  .scroll-slide-right.visible {
+    animation: slide-in-right 0.8s ease-out forwards;
+  }
+
+  .scroll-scale-in {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  .scroll-scale-in.visible {
+    animation: scale-in 0.6s ease-out forwards;
+  }
+
+  .scroll-fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .scroll-fade-up.visible {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+
+  .scroll-fade-down {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+
+  .scroll-fade-down.visible {
+    animation: fade-in-down 0.8s ease-out forwards;
+  }
+
+  /* Advanced scroll animations */
+  @keyframes slide-rotate-in {
+    from {
+      opacity: 0;
+      transform: translateX(-100px) rotate(-10deg);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0) rotate(0deg);
+    }
+  }
+
+  @keyframes bounce-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.3) translateY(-50px);
+    }
+
+    50% {
+      transform: scale(1.05) translateY(0);
+    }
+
+    70% {
+      transform: scale(0.95);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes flip-in {
+    from {
+      opacity: 0;
+      transform: perspective(400px) rotateY(90deg);
+    }
+
+    to {
+      opacity: 1;
+      transform: perspective(400px) rotateY(0deg);
+    }
+  }
+
+  @keyframes zoom-in {
+    from {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slide-up-fade {
+    from {
+      opacity: 0;
+      transform: translateY(60px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Scroll animation classes */
+  .scroll-slide-rotate {
+    opacity: 0;
+    transform: translateX(-100px) rotate(-10deg);
+  }
+
+  .scroll-slide-rotate.visible {
+    animation: slide-rotate-in 1s ease-out forwards;
+  }
+
+  .scroll-bounce-in {
+    opacity: 0;
+    transform: scale(0.3) translateY(-50px);
+  }
+
+  .scroll-bounce-in.visible {
+    animation: bounce-in 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+
+  .scroll-flip-in {
+    opacity: 0;
+    transform: perspective(400px) rotateY(90deg);
+  }
+
+  .scroll-flip-in.visible {
+    animation: flip-in 0.8s ease-out forwards;
+  }
+
+  .scroll-zoom-in {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  .scroll-zoom-in.visible {
+    animation: zoom-in 0.6s ease-out forwards;
+  }
+
+  .scroll-slide-up-fade {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+
+  .scroll-slide-up-fade.visible {
+    animation: slide-up-fade 0.8s ease-out forwards;
+  }
+
+  /* Stagger animations for children */
+  .stagger-children.visible>* {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+
+  .stagger-children.visible>*:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+
+  .stagger-children.visible>*:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .stagger-children.visible>*:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  .stagger-children.visible>*:nth-child(4) {
+    animation-delay: 0.4s;
+  }
+
+  .stagger-children.visible>*:nth-child(5) {
+    animation-delay: 0.5s;
+  }
+
+  .stagger-children.visible>*:nth-child(6) {
+    animation-delay: 0.6s;
+  }
+
+  .stagger-children.visible>*:nth-child(7) {
+    animation-delay: 0.7s;
+  }
+
+  .stagger-children.visible>*:nth-child(8) {
+    animation-delay: 0.8s;
+  }
+
+  .stagger-children.visible>*:nth-child(9) {
+    animation-delay: 0.9s;
+  }
+
+  .stagger-children>* {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  /* Parallax effect */
+  .parallax-slow {
+    transition: transform 0.5s ease-out;
+  }
+
+  /* Glow pulse on scroll */
+  @keyframes glow-pulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    }
+
+    50% {
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
+    }
+  }
+
+  .scroll-glow.visible {
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  /* Infinite Scroll Animation */
+  @keyframes scroll-infinite {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-scroll-infinite {
+    animation: scroll-infinite 30s linear infinite;
+  }
+
+  .animate-scroll-infinite:hover {
+    animation-play-state: paused;
   }
 }

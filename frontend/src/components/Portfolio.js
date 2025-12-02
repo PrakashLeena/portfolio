@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest, API_BASE_URL } from '../config/api';
 import { getSkillIcon } from '../utils/skillIcons';
+import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 // Contact Form State Hook
 const useContactForm = () => {
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,7 +34,7 @@ const useContactForm = () => {
 
       if (result.success) {
         setSubmitStatus('success');
-        setFormData({ name: '', message: '' });
+        setFormData({ name: '', email: '', message: '' });
       } else {
         setSubmitStatus('error');
       }
@@ -66,6 +68,13 @@ const Portfolio = () => {
 
   // Contact form state
   const { formData, isSubmitting, submitStatus, handleChange, handleSubmit } = useContactForm();
+
+  // Scroll animations for different sections
+  const experiencesAnim = useScrollAnimation({ threshold: 0.2 });
+  const skillsAnim = useScrollAnimation({ threshold: 0.2 });
+  const projectsAnim = useScrollAnimation({ threshold: 0.2 });
+  const certificationsAnim = useScrollAnimation({ threshold: 0.2 });
+  const contactAnim = useScrollAnimation({ threshold: 0.2 });
 
   const skillItems = skills.length > 0
     ? skills.flatMap((skill) => {
@@ -469,7 +478,7 @@ const Portfolio = () => {
         </div>
       </section>
       {/* Work Experiences */}
-      <div className="opacity-0 animate-fade-in-up h-full" style={{ animationDelay: '0.9s' }}>
+      <div ref={experiencesAnim.ref} className={`scroll-slide-rotate h-full ${experiencesAnim.isVisible ? 'visible' : ''}`}>
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Experiences</h2>
           <div className="w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
@@ -551,14 +560,10 @@ const Portfolio = () => {
       </div>
 
       {/* Technical Skills */}
-      <div className="opacity-0 animate-fade-in-up h-full" style={{ animationDelay: '1.5s' }}>
-        <div className="relative mb-12 flex justify-center">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto h-24 max-w-md rounded-full bg-purple-600/20 blur-3xl" />
-          <div className="relative px-10 py-3 rounded-full border border-purple-500/60 bg-gradient-to-r from-slate-900/80 via-purple-900/70 to-slate-900/80 shadow-lg shadow-purple-500/40">
-            <h2 className="text-sm md:text-base font-semibold tracking-[0.35em] uppercase text-purple-100 text-center">
-              Skills
-            </h2>
-          </div>
+      <div ref={skillsAnim.ref} className={`scroll-zoom-in h-full ${skillsAnim.isVisible ? 'visible' : ''}`}>
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Skills</h2>
+          <div className="w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
         </div>
 
         {loadingSkills ? (
@@ -571,47 +576,51 @@ const Portfolio = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1">
-            {skillItems.map((name, index) => {
-              const skillIcon = getSkillIcon(name);
-              const IconComponent = skillIcon?.icon;
-              const iconColor = skillIcon?.color || '#A78BFA';
+          <div className="relative w-full overflow-hidden py-4">
+            <div className="flex animate-scroll-infinite w-max space-x-8">
+              {/* Duplicate items for seamless loop */}
+              {[...skillItems, ...skillItems, ...skillItems].map((name, index) => {
+                const skillIcon = getSkillIcon(name);
+                const IconComponent = skillIcon?.icon;
+                const iconColor = skillIcon?.color || '#A78BFA';
 
-              return (
-                <div
-                  key={`${name}-${index}`}
-                  className="group relative flex flex-col items-center justify-center p-2 transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-110"
-                >
-                  {/* Icon */}
-                  <div className="flex items-center justify-center mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-0.5 group-hover:rotate-3">
-                    {IconComponent ? (
-                      <IconComponent
-                        className="text-2xl transition-all duration-300"
-                        style={{ color: iconColor }}
-                      />
-                    ) : (
-                      <span className="text-xl font-bold text-purple-200">
-                        {name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
+                return (
+                  <div
+                    key={`${name}-${index}`}
+                    className="group relative flex flex-col items-center justify-center min-w-[100px] p-2 transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-110"
+                  >
+                    {/* Icon */}
+                    <div className="flex items-center justify-center mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-0.5 group-hover:rotate-3">
+                      {IconComponent ? (
+                        <IconComponent
+                          className="text-4xl transition-all duration-300"
+                          style={{ color: iconColor }}
+                        />
+                      ) : (
+                        <span className="text-2xl font-bold text-purple-200">
+                          {name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Skill Name */}
+                    <span className="text-sm font-medium text-white/90 text-center px-1 leading-tight whitespace-nowrap">
+                      {name}
+                    </span>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Skill Name */}
-                  <span className="text-sm font-medium text-white/90 text-center px-1 leading-tight">
-                    {name}
-                  </span>
-
-                  {/* Hover Glow Effect */}
-                  {/* (Disabled to remove big rectangle background around icons) */}
-                </div>
-              );
-            })}
+            {/* Gradient masks for smooth fade edges */}
+            <div className="absolute top-0 left-0 h-full w-20 bg-gradient-to-r from-slate-900 to-transparent z-10"></div>
+            <div className="absolute top-0 right-0 h-full w-20 bg-gradient-to-l from-slate-900 to-transparent z-10"></div>
           </div>
         )}
       </div>
 
       {/* Projects Section */}
-      <div className="opacity-0 animate-fade-in-up h-full mt-20" style={{ animationDelay: '1.7s' }}>
+      <div ref={projectsAnim.ref} className={`scroll-bounce-in h-full mt-20 ${projectsAnim.isVisible ? 'visible' : ''}`}>
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Projects</h2>
           <div className="w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
@@ -706,7 +715,7 @@ const Portfolio = () => {
       </div>
 
       {/* Certifications Section */}
-      <div className="opacity-0 animate-fade-in-up h-full mt-20" style={{ animationDelay: '1.9s' }}>
+      <div ref={certificationsAnim.ref} className={`scroll-flip-in h-full mt-20 ${certificationsAnim.isVisible ? 'visible' : ''}`}>
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Certifications</h2>
           <div className="w-32 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
@@ -788,7 +797,7 @@ const Portfolio = () => {
       </div>
 
       {/* Contact Section with Form */}
-      <section id="contact" className="py-24 px-4 bg-gradient-to-b from-black/40 to-purple-900/30">
+      <section ref={contactAnim.ref} id="contact" className={`py-24 px-4 bg-gradient-to-b from-black/40 to-purple-900/30 scroll-slide-up-fade ${contactAnim.isVisible ? 'visible' : ''}`}>
         <div className="container mx-auto max-w-7xl">
           {/* Header */}
           <div className="text-center mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '2.1s' }}>
@@ -808,6 +817,12 @@ const Portfolio = () => {
                   <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 transition-all backdrop-blur-sm"
                     placeholder="Your name" />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-white font-semibold mb-2">Email</label>
+                  <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 transition-all backdrop-blur-sm"
+                    placeholder="Your email" />
                 </div>
                 <div>
                   <label htmlFor="message" className="block text-white font-semibold mb-2">Message</label>
