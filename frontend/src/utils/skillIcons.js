@@ -42,6 +42,7 @@ import {
     SiRender,
     SiNumpy,
     SiPandas,
+    SiC,
 } from 'react-icons/si';
 import { DiJava } from 'react-icons/di';
 import { TbBrandCpp } from 'react-icons/tb';
@@ -80,6 +81,7 @@ export const getSkillIcon = (skillName) => {
     if (name.includes('python')) return { icon: FaPython, color: '#3776AB' };
     if (name.includes('numpy')) return { icon: SiNumpy, color: '#013243' };
     if (name.includes('pandas')) return { icon: SiPandas, color: '#150458' };
+    if (name === 'c' || name === 'c language') return { icon: SiC, color: '#A8B9CC' };
     if (name.includes('java') && !name.includes('javascript')) return { icon: DiJava, color: '#007396' };
     if (name.includes('c++') || name.includes('cpp')) return { icon: TbBrandCpp, color: '#00599C' };
 
